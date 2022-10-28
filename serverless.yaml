@@ -1,0 +1,122 @@
+service: sls-nodejs-ts
+frameworkVersion: "3"
+
+plugins:
+  - serverless-esbuild
+  - serverless-offline
+  - serverless-prune-plugin
+
+package:
+  individually: true
+
+custom:
+  stages:
+    - dev
+    - prd
+  serverless-offline:
+    allowCache: true # revent serverless-offline from eating all of your memory
+    useChildProcesses: true
+    # httpsProtocol: "dev-certs"
+    # httpPort: 4000
+    # stageVariables:
+    #   foo: "bar"
+  prune:
+    automatic: true
+    number: 3
+  esbuild:
+    bundle: true
+    minify: false
+    sourcemap: true
+    exclude:
+      - aws-sdk
+    target: node16
+    platform: node
+    concurrency: 10
+
+provider:
+  name: aws
+  region: ap-southeast-2
+  runtime: nodejs16.x
+  apiGateway:
+    minimumCompressionSize: 1024
+    shouldStartNameWithService: true
+  environment:
+    AWS_NODEJS_CONNECTION_REUSE_ENABLED: "1"
+    NODE_OPTIONS: "--enable-source-maps --stack-trace-limit=1000"
+    USER_POOL_ID: { Ref: CogniteUserPool }
+    CLIENT_ID: { Ref: CognitoUserClient }
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - cognito-idp:AdminInitiateAuth
+            - cognito-idp:AdminCreateUser
+            - cognito-idp:AdminSetUserPassword
+            - cognito-idp:AdminAddUserToGroup
+            - cognito-idp:ListUsers
+            - cognito-idp:CreateGroup
+            - cognito-idp:GetGroup
+            - cognito-idp:GetUser # Do this next and grab the group data and model a user
+          Resource: "*"
+functions:
+  health:
+    handler: src/handlers/health.handler
+    events:
+      - http:
+          path: health
+          method: get
+          cors: true
+  auth:
+    handler: src/handlers/auth.handler
+    events:
+      - http:
+          path: user/auth
+          method: post
+          cors: true
+  register:
+    handler: src/handlers/register.handler
+    events:
+      - http:
+          path: user/register
+          method: post
+          cors: true
+  list:
+    handler: src/handlers/list.handler
+    events:
+      - http:
+          path: users
+          method: get
+          cors: true
+resources:
+  Resources:
+    CogniteUserPool:
+      Type: AWS::Cognito::UserPool
+      Properties:
+        UserPoolName: serverless-auth-pool
+        EmailVerificationSubject: "Your verification Code"
+        EmailVerificationMessage: "Use this code to confirm your sign up {####}"
+        MfaConfiguration: OFF
+        Schema:
+          - Name: email
+            Required: true
+            Mutable: true
+        Policies:
+          PasswordPolicy:
+            MinimumLength: 6
+            RequireLowercase: False
+            RequireNumbers: False
+            RequireSymbols: False
+            RequireUppercase: False
+        AutoVerifiedAttributes: ["email"]
+    CognitoUserClient:
+      Type: AWS::Cognito::UserPoolClient
+      Properties:
+        ClientName: my-cognito-client
+        GenerateSecret: false
+        UserPoolId: { Ref: CogniteUserPool }
+        AccessTokenValidity: 5
+        IdTokenValidity: 5
+        ExplicitAuthFlows:
+          - ALLOW_REFRESH_TOKEN_AUTH
+          - ALLOW_ADMIN_USER_PASSWORD_AUTH
