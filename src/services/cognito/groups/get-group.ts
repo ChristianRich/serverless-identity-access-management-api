@@ -4,8 +4,9 @@ import {
   GetGroupCommandInput,
   GetGroupCommandOutput,
 } from '@aws-sdk/client-cognito-identity-provider';
-import { getConfigVariable } from 'src/utils/env';
+import { getConfig } from 'src/utils/env';
 import logger from 'src/services/logger';
+import { AppConfig } from '@/constants';
 
 const client: CognitoIdentityProviderClient = new CognitoIdentityProviderClient(
   {},
@@ -16,7 +17,7 @@ export const getGroup = async (
 ): Promise<GetGroupCommandOutput> => {
   const input: GetGroupCommandInput = {
     GroupName: name,
-    UserPoolId: getConfigVariable('USER_POOL_ID'),
+    UserPoolId: getConfig(AppConfig.USER_POOL_ID),
   };
 
   const command: GetGroupCommand = new GetGroupCommand(input);
@@ -34,7 +35,5 @@ export const getGroup = async (
   }
 };
 
-export const groupExists = async (name: string): Promise<boolean> => {
-  const output: GetGroupCommandOutput = await getGroup(name);
-  return Boolean(output);
-};
+export const groupExists = async (name: string): Promise<boolean> =>
+  !!(await getGroup(name));

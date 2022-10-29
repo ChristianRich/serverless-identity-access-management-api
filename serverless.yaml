@@ -1,20 +1,16 @@
-service: sls-nodejs-ts
+service: ${file(./package.json):name}
 frameworkVersion: "3"
-
 plugins:
   - serverless-esbuild
   - serverless-offline
   - serverless-prune-plugin
-
 package:
   individually: true
-
 custom:
-  stages:
-    - dev
-    - prd
+  usersTableName: ${sls:stage}.${self:service}.users
+  cognitoClientName: my-cognito-client # defined on creation in AWS Console > Cognito > Userpools
   serverless-offline:
-    allowCache: true # revent serverless-offline from eating all of your memory
+    allowCache: true # Prevemt serverless-offline from eating all of your memory
     useChildProcesses: true
     # httpsProtocol: "dev-certs"
     # httpPort: 4000
@@ -32,7 +28,6 @@ custom:
     target: node16
     platform: node
     concurrency: 10
-
 provider:
   name: aws
   region: ap-southeast-2
@@ -43,28 +38,52 @@ provider:
   environment:
     AWS_NODEJS_CONNECTION_REUSE_ENABLED: "1"
     NODE_OPTIONS: "--enable-source-maps --stack-trace-limit=1000"
+    STAGE: ${sls:stage}
     USER_POOL_ID: { Ref: CogniteUserPool }
     CLIENT_ID: { Ref: CognitoUserClient }
+    USERS_TABLE_NAME: ${self:custom.usersTableName}
   iam:
     role:
       statements:
         - Effect: Allow
           Action:
             - cognito-idp:AdminInitiateAuth
+            - cognito-idp:AdminGetUser
             - cognito-idp:AdminCreateUser
             - cognito-idp:AdminSetUserPassword
             - cognito-idp:AdminAddUserToGroup
             - cognito-idp:ListUsers
             - cognito-idp:CreateGroup
             - cognito-idp:GetGroup
-            - cognito-idp:GetUser # Do this next and grab the group data and model a user
+            - cognito-idp:GetUser
           Resource: "*"
+        - Effect: Allow
+          Action:
+            - dynamodb:DescribeTable
+            - dynamodb:DescribeStream
+            - dynamodb:ListStreams
+            - dynamodb:GetRecords
+            # - dynamodb:GetShardIterator
+            - dynamodb:Query
+            - dynamodb:GetItem
+            - dynamodb:PutItem
+            - dynamodb:UpdateItem
+            - dynamodb:DeleteItem
+          Resource:
+            - Fn::GetAtt: [UserTable, Arn]
 functions:
   health:
     handler: src/handlers/health.handler
     events:
       - http:
           path: health
+          method: get
+          cors: true
+  get:
+    handler: src/handlers/get.handler
+    events:
+      - http:
+          path: user/{id}
           method: get
           cors: true
   auth:
@@ -97,10 +116,17 @@ resources:
         EmailVerificationSubject: "Your verification Code"
         EmailVerificationMessage: "Use this code to confirm your sign up {####}"
         MfaConfiguration: OFF
+        AutoVerifiedAttributes:
+          - email
+        UsernameAttributes:
+          - email
         Schema:
           - Name: email
             Required: true
             Mutable: true
+          - Name: name
+            Required: true
+            Mutable: false
         Policies:
           PasswordPolicy:
             MinimumLength: 6
@@ -108,11 +134,28 @@ resources:
             RequireNumbers: False
             RequireSymbols: False
             RequireUppercase: False
-        AutoVerifiedAttributes: ["email"]
+    CognitoUserPoolGroupUser:
+      Type: AWS::Cognito::UserPoolGroup
+      Properties:
+        Description: "Users"
+        GroupName: "USER"
+        UserPoolId: { Ref: CogniteUserPool }
+    CognitoUserPoolGroupModerator:
+      Type: AWS::Cognito::UserPoolGroup
+      Properties:
+        Description: "Moderators"
+        GroupName: "MODERATOR"
+        UserPoolId: { Ref: CogniteUserPool }
+    CognitoUserPoolGroupAdmin:
+      Type: AWS::Cognito::UserPoolGroup
+      Properties:
+        Description: "Admins"
+        GroupName: "ADMIN"
+        UserPoolId: { Ref: CogniteUserPool }
     CognitoUserClient:
       Type: AWS::Cognito::UserPoolClient
       Properties:
-        ClientName: my-cognito-client
+        ClientName: ${self:custom.cognitoClientName}
         GenerateSecret: false
         UserPoolId: { Ref: CogniteUserPool }
         AccessTokenValidity: 5
@@ -120,3 +163,57 @@ resources:
         ExplicitAuthFlows:
           - ALLOW_REFRESH_TOKEN_AUTH
           - ALLOW_ADMIN_USER_PASSWORD_AUTH
+    UserTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:custom.usersTableName}
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+          - AttributeName: name
+            AttributeType: S
+          - AttributeName: createdAt
+            AttributeType: S
+          - AttributeName: activationCode
+            AttributeType: S
+          - AttributeName: email
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+          - AttributeName: createdAt
+            KeyType: RANGE
+        GlobalSecondaryIndexes:
+          - IndexName: NameIndex
+            KeySchema:
+              - AttributeName: name
+                KeyType: HASH
+              - AttributeName: createdAt
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+          - IndexName: EmailIndex
+            KeySchema:
+              - AttributeName: email
+                KeyType: HASH
+            Projection:
+              ProjectionType: ALL
+          - IndexName: ActivationCodeIndex
+            KeySchema:
+              - AttributeName: activationCode
+                KeyType: HASH
+            Projection:
+              ProjectionType: ALL
+        StreamSpecification:
+          StreamViewType: NEW_IMAGE
+        BillingMode: PAY_PER_REQUEST
+    # MyApi:
+    #   Type: AWS::Serverless::Api
+    #   Properties:
+    #     StageName: dev
+    #     Cors: "'*'"
+    #     Auth:
+    #       DefaultAuthorizer: MyCognitoAuthorizer
+    #       Authorizers:
+    #         MyCognitoAuthorizer:
+    #           UserPoolArn: !GetAtt CogniteUserPool.Arn

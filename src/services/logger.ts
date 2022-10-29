@@ -4,51 +4,54 @@ import {
   UnformattedAttributes,
 } from '@aws-lambda-powertools/logger/lib/types';
 import { Context } from 'aws-lambda';
-import { getConfigVariable, getNodeEnv, NODE_ENV } from 'src/utils/env';
 
 type CustomLogFormat = LogAttributes;
 
+export const logformatAWS = (
+  attributes: UnformattedAttributes,
+  timestamp: string,
+): CustomLogFormat => ({
+  level: attributes.logLevel,
+  message: attributes.message,
+  service: attributes.serviceName,
+  environment: attributes.environment,
+  awsRegion: attributes.awsRegion,
+  correlationIds: {
+    awsRequestId: attributes.lambdaContext?.awsRequestId,
+    xRayTraceId: attributes.xRayTraceId,
+  },
+  lambdaFunction: {
+    name: attributes.lambdaContext?.functionName,
+    arn: attributes.lambdaContext?.invokedFunctionArn,
+    memoryLimitInMB: attributes.lambdaContext?.memoryLimitInMB,
+    version: attributes.lambdaContext?.functionVersion,
+    coldStart: attributes.lambdaContext?.coldStart,
+  },
+  timestamp,
+});
+
+export const logformatLocal = (
+  attributes: UnformattedAttributes,
+): CustomLogFormat => ({ message: attributes.message });
 class CustomLogFormatter extends LogFormatter {
   public formatAttributes(attributes: UnformattedAttributes): CustomLogFormat {
-    return {
-      logLevel: attributes.logLevel,
-      message: attributes.message,
-      service: attributes.serviceName,
-      environment: attributes.environment,
-      awsRegion: attributes.awsRegion,
-      correlationIds: {
-        awsRequestId: attributes.lambdaContext?.awsRequestId,
-        xRayTraceId: attributes.xRayTraceId,
-      },
-      lambdaFunction: {
-        name: attributes.lambdaContext?.functionName,
-        arn: attributes.lambdaContext?.invokedFunctionArn,
-        memoryLimitInMB: attributes.lambdaContext?.memoryLimitInMB,
-        version: attributes.lambdaContext?.functionVersion,
-        coldStart: attributes.lambdaContext?.coldStart,
-      },
-      timestamp: this.formatTimestamp(attributes.timestamp),
-    };
+    const timestamp = this.formatTimestamp(attributes.timestamp);
+
+    // Simplied logs for localhost development when using serverless-offline plug-in
+    return process.env.IS_OFFLINE === 'true'
+      ? logformatLocal(attributes)
+      : logformatAWS(attributes, timestamp);
   }
 }
 
 const logger: Logger = new Logger({
   logFormatter: new CustomLogFormatter(),
-  logLevel: getConfigVariable(
-    'LOG_LEVEL',
-    false,
-    getNodeEnv() === NODE_ENV.PRD ? 'INFO' : 'DEBUG',
-  ),
-  serviceName: getConfigVariable(
-    'AWS_LAMBDA_FUNCTION_NAME',
-    false,
-    'localhost',
-  ),
+  logLevel: process.env.LOG_LEVEL || 'DEBUG',
+  serviceName: process.env.AWS_LAMBDA_FUNCTION_NAME,
 });
 
 const getLogger = (): Logger => logger;
 
-// TODO Inject context in @middy middleware
 export const setContext = (context: Context): void =>
   getLogger().addContext(context);
 

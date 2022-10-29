@@ -1,8 +1,6 @@
 import {
   DeleteItemCommand,
   DynamoDBClient,
-  GetItemCommand,
-  GetItemCommandOutput,
   PutItemCommand,
   UpdateItemCommand,
   QueryCommand,
@@ -10,26 +8,20 @@ import {
 } from '@aws-sdk/client-dynamodb';
 import { marshall, unmarshall } from '@aws-sdk/util-dynamodb';
 import createError from 'http-errors';
-import { getConfigVariable } from 'src/utils/env';
+import { getConfig } from 'src/utils/env';
 import logger from 'src/services/logger';
+import { User, UserStatus } from '@/types/user';
 
 // Docs
 // Error types
 // https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/clients/client-dynamodb/classes/dynamodbserviceexception.html
 
 const client: DynamoDBClient = new DynamoDBClient({
-  region: getConfigVariable('AWS_REGION'),
+  region: getConfig('AWS_REGION'),
 });
 
 // const documentClient: DocumentClient = new DocumentClient();
-const getTableName = (): string =>
-  <string>getConfigVariable('USERS_TABLE_NAME');
-
-type User = {
-  id: string;
-};
-
-type UserStatus = 'FOO' | 'BAR';
+const getTableName = (): string => getConfig('USERS_TABLE_NAME');
 
 export const createUser = async (user: User): Promise<void> => {
   const command = new PutItemCommand({
@@ -46,31 +38,35 @@ export const createUser = async (user: User): Promise<void> => {
     if (name === 'ConditionalCheckFailedException') {
       throw createError(400, `User id ${user.id} already exists`);
     }
-
     logger.error(`createUser ${name}: ${message}`);
-    throw createError(500, {
-      detail: 'An error occurred during account registration', // TODO get rid of detail and use message property
-    });
+    throw createError(500, 'User registration error');
   }
 };
 
 export const getUserById = async (id: string): Promise<User | null> => {
   try {
-    const command = new GetItemCommand({
+    const command = new QueryCommand({
       TableName: getTableName(),
-      Key: marshall({ id }),
+      KeyConditionExpression: '#id = :s',
+      ExpressionAttributeValues: marshall({
+        ':s': id,
+      }),
+      ExpressionAttributeNames: {
+        '#id': 'id',
+      },
     });
 
-    const data: GetItemCommandOutput = await client.send(command);
-    const { Item } = data;
-    return Item ? <User>unmarshall(Item) : null;
+    const data: QueryCommandOutput = await client.send(command);
+    const { Items } = data;
+
+    if (!Items?.length) {
+      return null;
+    }
+    return <User>unmarshall(Items[0]);
   } catch (error) {
     const { name, message } = <Error>error;
     logger.error(`getUserById ${name}: ${message}`);
-
-    throw createError(500, {
-      detail: 'We encountered an error retrieving the user profile',
-    });
+    throw createError(500, 'Error getting user by id');
   }
 };
 
@@ -97,11 +93,8 @@ export const getUserByName = async (name: string): Promise<User | null> => {
     return <User>unmarshall(Items[0]);
   } catch (error) {
     const { name, message } = <Error>error;
-
     logger.error(`getUserByName ${name}: ${message}`);
-    throw createError(500, {
-      detail: 'We encountered an error retrieving the user profile',
-    });
+    throw createError(500, 'Error getting user profile');
   }
 };
 
@@ -125,11 +118,8 @@ export const getUserByEmail = async (email: string): Promise<User | null> => {
     return <User>unmarshall(Items[0]);
   } catch (error) {
     const { name, message } = <Error>error;
-    logger.error(`getUserByName ${name}: ${message}`);
-
-    throw createError(500, {
-      detail: 'We encountered an error retrieving the user profile',
-    });
+    logger.error(`getUserByEmail ${name}: ${message}`);
+    throw createError(500, 'Error getting user profile');
   }
 };
 
@@ -156,10 +146,7 @@ export const getUserByActivationCode = async (
   } catch (error) {
     const { name, message } = <Error>error;
     logger.error(`getUserByActivationCode ${name}: ${message}`);
-
-    throw createError(500, {
-      detail: 'We encountered an error during account activation',
-    });
+    throw createError(500, 'Error getting user from activation code');
   }
 };
 
@@ -191,9 +178,7 @@ export const updateLastLoginTimeStamp = async (
     if (name === 'ConditionalCheckFailedException') {
       throw createError(404);
     }
-    throw createError(500, {
-      detail: 'We encountered an error during login',
-    });
+    throw createError(500, 'Error updating user data');
   }
 };
 
@@ -223,9 +208,7 @@ export const updateUserStatus = async (
       throw createError(404);
     }
 
-    throw createError(500, {
-      detail: 'We encountered an error during account activation',
-    });
+    throw createError(500, 'Error updating user data');
   }
 };
 
@@ -249,7 +232,7 @@ export const deleteActivationCode = async (
     await client.send(command);
   } catch (error) {
     const { name, message } = <Error>error;
-    logger.error(`DynamoDB.UpdateItemCommand ${name}: ${message}`);
+    logger.error(`deleteActivationCode ${name}: ${message}`);
 
     if (!throwOnError) {
       return;
@@ -259,9 +242,7 @@ export const deleteActivationCode = async (
       throw createError(404);
     }
 
-    throw createError(500, {
-      detail: 'We encountered an error during account activation',
-    });
+    throw createError(500, 'Error updating user data');
   }
 };
 
@@ -289,9 +270,7 @@ export const deleteUser = async (
       throw createError(404);
     }
 
-    throw createError(500, {
-      detail: `Error deleting user ${id}`,
-    });
+    throw createError(500, `Error deleting user ${id}`);
   }
 };
 

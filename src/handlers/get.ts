@@ -1,4 +1,3 @@
-import type { ListUsersCommandOutput } from '@aws-sdk/client-cognito-identity-provider';
 import logger from 'src/services/logger';
 import type {
   Context,
@@ -9,21 +8,23 @@ import middy from '@middy/core';
 import httpHeaderNormalizer from '@middy/http-header-normalizer';
 import httpSecurityHeaders from '@middy/http-security-headers';
 import errorHandler from '@schibsted/middy-error-handler';
-import { listUsers } from '@/services/cognito/list';
 import type { HttpError } from 'http-errors';
+import { getUserById } from '@/services/user/get';
 
 const baseHandler = async (
-  _event: APIGatewayProxyEvent,
+  event: APIGatewayProxyEvent,
   context: Context,
 ): Promise<APIGatewayProxyResult> => {
   logger.addContext(context);
+  const { pathParameters } = event;
+  const { id } = pathParameters;
 
   try {
-    const users: ListUsersCommandOutput = await listUsers();
+    const user = await getUserById(id);
 
     return {
       statusCode: 200,
-      body: JSON.stringify(users),
+      body: JSON.stringify(user),
     };
   } catch (error) {
     const { name, message, statusCode = 500 } = <Error | HttpError>error;

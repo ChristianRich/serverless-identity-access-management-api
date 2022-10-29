@@ -4,14 +4,16 @@ import {
   CreateGroupCommandInput,
   CreateGroupCommandOutput,
 } from '@aws-sdk/client-cognito-identity-provider';
-import { getConfigVariable } from 'src/utils/env';
+import { getConfig } from 'src/utils/env';
 import logger from 'src/services/logger';
+import { AppConfig } from '@/constants';
 import { groupExists } from './get-group';
 
 const client: CognitoIdentityProviderClient = new CognitoIdentityProviderClient(
   {},
 );
 
+// Don't use this, create groups via serverless.yaml config
 export const createGroup = async (
   name: string,
 ): Promise<CreateGroupCommandOutput | undefined> => {
@@ -27,7 +29,7 @@ export const createGroup = async (
 
   const input: CreateGroupCommandInput = {
     GroupName: name,
-    UserPoolId: getConfigVariable('USER_POOL_ID'),
+    UserPoolId: getConfig(AppConfig.USER_POOL_ID),
   };
 
   const command: CreateGroupCommand = new CreateGroupCommand(input);

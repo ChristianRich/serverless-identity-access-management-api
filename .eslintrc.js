@@ -24,6 +24,8 @@ module.exports = {
     'import/extensions': 'off',
     'prettier/prettier': 'error',
     'no-shadow': 'off',
+    'no-use-before-define': 'off',
+    'lines-between-class-members': 'off',
   },
   settings: {
     'import/resolver': {

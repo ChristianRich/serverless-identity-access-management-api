@@ -8,7 +8,7 @@ import middy from '@middy/core';
 import httpHeaderNormalizer from '@middy/http-header-normalizer';
 import httpSecurityHeaders from '@middy/http-security-headers';
 import errorHandler from '@schibsted/middy-error-handler';
-import { getNodeEnv, NODE_ENV, printEnvVars } from '@/utils/env';
+import { getConfig, getEnvVars } from '@/utils/env';
 
 const baseHandler = async (
   event: APIGatewayProxyEvent,
@@ -16,11 +16,18 @@ const baseHandler = async (
 ): Promise<APIGatewayProxyResult> => {
   logger.addContext(context);
 
+  logger.info('Log test INFO', { data: 'some-data' });
+  logger.debug('Log test DEBUG');
+  logger.warn('Log test WARN');
+  logger.error('Log test ERROR');
+
+  // Should produce a warning
+  getConfig('FOO', false);
+
   return {
     statusCode: 200,
     body: JSON.stringify({
-      nodeEnv: getNodeEnv() || 'local',
-      envVars: printEnvVars(),
+      'process.env': getEnvVars(),
       event,
       context,
     }),
@@ -30,4 +37,4 @@ const baseHandler = async (
 export const handler = middy(baseHandler)
   .use(httpHeaderNormalizer())
   .use(httpSecurityHeaders())
-  .use(errorHandler({ exposeStackTrace: getNodeEnv() !== NODE_ENV.PRD }));
+  .use(errorHandler({ exposeStackTrace: true }));

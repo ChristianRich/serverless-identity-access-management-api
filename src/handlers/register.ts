@@ -1,18 +1,18 @@
-import { UserType } from '@aws-sdk/client-cognito-identity-provider';
 import { registerUser } from 'src/services/user/register-user';
-import logger from 'src/services/logger';
-import { Context } from 'aws-lambda';
+import logger from '@/services/logger';
+import type { Context } from 'aws-lambda';
 import middyJsonBodyParser from '@middy/http-json-body-parser';
 import middy from '@middy/core';
 import httpHeaderNormalizer from '@middy/http-header-normalizer';
 import httpSecurityHeaders from '@middy/http-security-headers';
 import errorHandler from '@schibsted/middy-error-handler';
-import {
+import type {
   ValidatedAPIGatewayProxyEvent,
   ValidatedEventAPIGatewayProxyEvent,
 } from '@/types/api-gateway';
 import { jsonSchemaBodyValidator } from '@/middleware/json-schema-body-validator';
-import { getNodeEnv, NODE_ENV } from '@/utils/env';
+import type { HttpError } from 'http-errors';
+import type { User, UserCreateInput } from '../types/user';
 
 const requestBodySchema = {
   type: 'object',
@@ -42,20 +42,32 @@ const baseHandler: ValidatedEventAPIGatewayProxyEvent<
 ) => {
   logger.addContext(context);
 
-  try {
-    const { email, password } = event.body;
-    const user: UserType = await registerUser(email, password);
+  const { body, requestContext } = event;
 
+  // Map unsafe user input to type-safe transfer model
+  const userCreateInput: UserCreateInput = {
+    name: body.name,
+    email: body.email,
+    password: body.password,
+    repeatPassword: body.repeatPassword,
+    sourceIp: requestContext.identity.sourceIp,
+    'bio.avatarUrl': body['bio.avatarUrl'],
+    'bio.about': body['bio.about'],
+    'bio.location': body['bio.location'],
+  };
+
+  try {
+    const user: User = await registerUser(userCreateInput);
     return {
       statusCode: 200,
       body: JSON.stringify(user),
     };
   } catch (error) {
-    const { message } = <Error>error;
-    logger.error(`User registration error: ${message}`);
+    const { name, message, statusCode = 500 } = <Error | HttpError>error;
+    logger.error(`User registration error: ${statusCode} ${name}: ${message}`);
 
     return {
-      statusCode: 500,
+      statusCode,
       body: JSON.stringify(error),
     };
   }
@@ -66,4 +78,4 @@ export const handler = middy(baseHandler)
   .use(middyJsonBodyParser())
   .use(jsonSchemaBodyValidator(requestBodySchema))
   .use(httpSecurityHeaders())
-  .use(errorHandler({ exposeStackTrace: getNodeEnv() !== NODE_ENV.PRD }));
+  .use(errorHandler({ exposeStackTrace: true }));

@@ -1,10 +1,11 @@
+import { AppConfig } from '@/constants';
 import {
   AdminSetUserPasswordCommandInput,
   AdminSetUserPasswordCommand,
   CognitoIdentityProviderClient,
 } from '@aws-sdk/client-cognito-identity-provider';
 import logger from 'src/services/logger';
-import { getConfigVariable } from 'src/utils/env';
+import { getConfig } from 'src/utils/env';
 
 const client: CognitoIdentityProviderClient = new CognitoIdentityProviderClient(
   {},
@@ -18,7 +19,7 @@ export const setPassword = async (
 ): Promise<void> => {
   const input: AdminSetUserPasswordCommandInput = {
     Password: password,
-    UserPoolId: getConfigVariable('USER_POOL_ID'),
+    UserPoolId: getConfig(AppConfig.USER_POOL_ID),
     Username: email,
     Permanent: true,
   };

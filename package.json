@@ -1,5 +1,5 @@
 {
-  "name": "user-api-s2s",
+  "name": "user-api",
   "version": "1.0.0",
   "description": "User Management & Authentication API (S2S)",
   "scripts": {

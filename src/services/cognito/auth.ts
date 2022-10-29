@@ -6,7 +6,8 @@ import {
   AdminInitiateAuthCommandOutput,
   AuthenticationResultType,
 } from '@aws-sdk/client-cognito-identity-provider';
-import { getConfigVariable } from 'src/utils/env';
+import { getConfig } from 'src/utils/env';
+import { AppConfig } from '@/constants';
 
 const client: CognitoIdentityProviderClient = new CognitoIdentityProviderClient(
   {},
@@ -19,8 +20,8 @@ export const auth = async (
 ): Promise<AuthenticationResultType> => {
   const input: AdminInitiateAuthCommandInput = {
     AuthFlow: 'ADMIN_NO_SRP_AUTH',
-    UserPoolId: getConfigVariable('USER_POOL_ID'),
-    ClientId: getConfigVariable('CLIENT_ID'),
+    UserPoolId: getConfig(AppConfig.USER_POOL_ID),
+    ClientId: getConfig(AppConfig.CLIENT_ID),
     AuthParameters: {
       USERNAME: email,
       PASSWORD: password,

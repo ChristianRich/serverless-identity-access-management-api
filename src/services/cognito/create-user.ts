@@ -6,22 +6,31 @@ import {
   UserType,
 } from '@aws-sdk/client-cognito-identity-provider';
 import logger from 'src/services/logger';
-import { getConfigVariable } from 'src/utils/env';
+import { getConfig } from 'src/utils/env';
 import createError from 'http-errors';
+import { AppConfig } from '@/constants';
 
 const client: CognitoIdentityProviderClient = new CognitoIdentityProviderClient(
   {},
 );
 
 // https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/clients/client-cognito-identity-provider/classes/admincreateusercommand.html
-export const createUser = async (email: string): Promise<UserType> => {
+// Limited support for custom fields for Cognito users, hence we only capture ID fields for authentication purposes
+export const createUser = async (
+  email: string,
+  name: string,
+): Promise<UserType> => {
   const input: AdminCreateUserRequest = {
-    UserPoolId: getConfigVariable('USER_POOL_ID'),
+    UserPoolId: getConfig(AppConfig.USER_POOL_ID),
     Username: email,
     UserAttributes: [
       {
         Name: 'email',
         Value: email,
+      },
+      {
+        Name: 'name',
+        Value: name,
       },
       {
         Name: 'email_verified',

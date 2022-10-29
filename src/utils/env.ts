@@ -1,34 +1,23 @@
-import path from 'path';
 import { omitBy } from 'lodash';
 import createError from 'http-errors';
+import logger from '@/services/logger';
+import { AppConfig } from '@/constants';
 
-// eslint-disable-next-line no-shadow
-export enum NODE_ENV {
-  DEV = 'dev',
-  TST = 'tst',
-  UAT = 'uat',
-  STG = 'stg',
-  PRD = 'prd',
-}
-
-/**
- * Centralised point for accessing `process.env` variables
- */
-export const getConfigVariable = (
-  key: string,
+// Centralised point for accessing `process.env` variables
+export const getConfig = (
+  key: AppConfig,
   isRequired = true,
   fallbackValue?: string,
 ): string | undefined => {
-  const value: string | undefined = process.env[key.trim()];
+  const value: string | undefined = process.env[String(key)];
 
   if (!value?.length) {
-    const message = `Configuration error: '${key}' required`;
+    const message = `Configuration error: '${key}' is required`;
 
     if (isRequired) {
       throw createError(500, message); // TODO integrate Middy error handler MW
     }
-    // eslint-disable-next-line no-console
-    console.warn(
+    logger.warn(
       `Configuration warning: Optional key '${key}' accessed, but not present in runtime config. Fallback value: ${fallbackValue}`,
     );
     return fallbackValue ?? undefined;
@@ -36,42 +25,16 @@ export const getConfigVariable = (
   return value;
 };
 
-/**
- *  Returns true if runtime environment is AWS Lambda
- */
+// serverless-offline plug-in
+export const isOffline = (env: NodeJS.ProcessEnv = process.env): boolean =>
+  env.IS_OFFLINE === 'true';
+
+// Returns true when runtime environment is AWS Lambda
 export const isAWS = (env: NodeJS.ProcessEnv = process.env): boolean =>
-  'AWS_LAMBDA_FUNCTION_NAME' in env || 'LAMBDA_TASK_ROOT' in env;
+  'AWS_LAMBDA_FUNCTION_NAME' in env &&
+  'LAMBDA_TASK_ROOT' in env &&
+  !isOffline();
 
-/**
- *  Assume localhost if not AWS.
- */
-export const isLocalhost = (env: NodeJS.ProcessEnv = process.env): boolean =>
-  !isAWS(env);
-
-/**
- * Return the Node runtime env
- */
-export const getNodeEnv = (
+export const getEnvVars = (
   env: NodeJS.ProcessEnv = process.env,
-): string | undefined => env.NODE_ENV;
-
-/**
- * *** SECURITY WARNING ***
- * Return all process.env variables omitting keys beginning with `npm_`
- * Useful for dev debugging (non-prd only)
- */
-export const printEnvVars = (
-  env: NodeJS.ProcessEnv = process.env,
-): Record<string, string> =>
-  getNodeEnv() !== NODE_ENV.PRD
-    ? <Record<string, string>>omitBy(env, (_v, k) => k.startsWith('_npm'))
-    : {};
-
-/**
- * Resolves the base path for either AWS and localhost respectively
- * Useful when interacting with the file system
- */
-export const resolveBasePath = (subPath = ''): string =>
-  isAWS()
-    ? path.join(<string>process.env.LAMBDA_TASK_ROOT, subPath)
-    : path.join(process.cwd(), subPath);
+): Record<string, string> => omitBy(env, (_v, k) => k.startsWith('_npm'));

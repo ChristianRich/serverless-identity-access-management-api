@@ -1,6 +1,7 @@
 import { AuthenticationResultType } from '@aws-sdk/client-cognito-identity-provider';
-import logger from 'src/services/logger';
+import logger from '@/services/logger';
 import { Context } from 'aws-lambda';
+import type { HttpError } from 'http-errors';
 import middyJsonBodyParser from '@middy/http-json-body-parser';
 import middy from '@middy/core';
 import httpHeaderNormalizer from '@middy/http-header-normalizer';
@@ -11,7 +12,6 @@ import {
   ValidatedEventAPIGatewayProxyEvent,
 } from '@/types/api-gateway';
 import { jsonSchemaBodyValidator } from '@/middleware/json-schema-body-validator';
-import { getNodeEnv, NODE_ENV } from '@/utils/env';
 import { auth } from '@/services/cognito/auth';
 
 const requestBodySchema = {
@@ -31,9 +31,9 @@ const baseHandler: ValidatedEventAPIGatewayProxyEvent<
   context: Context,
 ) => {
   logger.addContext(context);
+  const { email, password } = event.body;
 
   try {
-    const { email, password } = event.body;
     const authenticationResult: AuthenticationResultType = await auth(
       email,
       password,
@@ -44,11 +44,14 @@ const baseHandler: ValidatedEventAPIGatewayProxyEvent<
       body: JSON.stringify(authenticationResult),
     };
   } catch (error) {
-    const { message } = <Error>error;
-    logger.error(`Error authenticating in user: ${message}`);
+    const { name, message, statusCode = 500 } = <Error | HttpError>error;
+
+    logger.error(`User authentication error ${name} ${message}`, {
+      data: email,
+    });
 
     return {
-      statusCode: 500,
+      statusCode,
       body: JSON.stringify(error),
     };
   }
@@ -59,4 +62,4 @@ export const handler = middy(baseHandler)
   .use(middyJsonBodyParser())
   .use(jsonSchemaBodyValidator(requestBodySchema))
   .use(httpSecurityHeaders())
-  .use(errorHandler({ exposeStackTrace: getNodeEnv() !== NODE_ENV.PRD }));
+  .use(errorHandler({ exposeStackTrace: process.env.NODE_ENV !== 'prd' }));
