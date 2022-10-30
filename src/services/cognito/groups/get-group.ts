@@ -23,11 +23,11 @@ export const getGroup = async (
   const command: GetGroupCommand = new GetGroupCommand(input);
 
   try {
-    logger.debug('Cognito.GetGroupCommandOutput', { data: input });
+    logger.debug('Cognito.GetGroupCommand', { data: input });
     return client.send<GetGroupCommandInput, GetGroupCommandOutput>(command);
   } catch (error) {
     const { message, name } = <Error>error;
-    logger.error(`Cognito.GetGroupCommandOutput: ${name}: ${message}`, {
+    logger.error(`Cognito.GetGroupCommand: ${name}: ${message}`, {
       error,
       input,
     });

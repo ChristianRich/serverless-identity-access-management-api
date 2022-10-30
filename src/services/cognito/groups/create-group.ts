@@ -35,13 +35,13 @@ export const createGroup = async (
   const command: CreateGroupCommand = new CreateGroupCommand(input);
 
   try {
-    logger.debug('Cognito.CreateGroupCommandOutput', { data: { name } });
+    logger.debug('Cognito.CreateGroupCommand', { data: { name } });
     return client.send<CreateGroupCommandInput, CreateGroupCommandOutput>(
       command,
     );
   } catch (error) {
     const { message, name } = <Error>error;
-    logger.error(`Cognito.CreateGroupCommandOutput: ${name}: ${message}`, {
+    logger.error(`Cognito.CreateGroupCommand: ${name}: ${message}`, {
       error,
       input,
     });

@@ -25,12 +25,12 @@ export const listUsers = async (): Promise<ListUsersCommandOutput> => {
   const command: ListUsersCommand = new ListUsersCommand(input);
 
   try {
-    logger.debug('Cognito.ListUsersCommandOutput', { data: input });
+    logger.debug('Cognito.ListUsersCommand', { data: input });
     const output: ListUsersCommandOutput = await client.send(command);
     return output;
   } catch (error) {
     const { message, name } = <Error>error;
-    logger.error(`Cognito.ListUsersCommandOutput: ${name}: ${message}`, {
+    logger.error(`Cognito.ListUsersCommand: ${name}: ${message}`, {
       error,
       input,
     });

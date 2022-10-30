@@ -5,6 +5,7 @@ import {
   UpdateItemCommand,
   QueryCommand,
   QueryCommandOutput,
+  UpdateItemCommandInput,
 } from '@aws-sdk/client-dynamodb';
 import { marshall, unmarshall } from '@aws-sdk/util-dynamodb';
 import createError from 'http-errors';
@@ -94,7 +95,32 @@ export const getUserByName = async (name: string): Promise<User | null> => {
   } catch (error) {
     const { name, message } = <Error>error;
     logger.error(`getUserByName ${name}: ${message}`);
-    throw createError(500, 'Error getting user profile');
+    throw createError(500, 'Error fetching user profile');
+  }
+};
+
+export const getUserByHandle = async (handle: string): Promise<User | null> => {
+  try {
+    const command = new QueryCommand({
+      TableName: getTableName(),
+      IndexName: 'HandleIndex',
+      KeyConditionExpression: 'handle = :s',
+      ExpressionAttributeValues: marshall({
+        ':s': handle,
+      }),
+    });
+
+    const data: QueryCommandOutput = await client.send(command);
+    const { Items } = data;
+
+    if (!Items?.length) {
+      return null;
+    }
+    return <User>unmarshall(Items[0]);
+  } catch (error) {
+    const { name, message } = <Error>error;
+    logger.error(`getUserByEmail ${name}: ${message}`);
+    throw createError(500, 'Error fetching user profile');
   }
 };
 
@@ -119,7 +145,7 @@ export const getUserByEmail = async (email: string): Promise<User | null> => {
   } catch (error) {
     const { name, message } = <Error>error;
     logger.error(`getUserByEmail ${name}: ${message}`);
-    throw createError(500, 'Error getting user profile');
+    throw createError(500, 'Error fetching user profile');
   }
 };
 
@@ -182,12 +208,55 @@ export const updateLastLoginTimeStamp = async (
   }
 };
 
+/*
+
+{
+  TableName: 'dev.user-api.users',
+  Key: {
+    id: {
+      S: '395cf48f-2795-4ad1-88fb-dfd2501a0fad',
+    },
+  },
+  ConditionExpression: 'attribute_exists(id)',
+  UpdateExpression: 'SET #status = :status',
+  ExpressionAttributeValues: {
+    ':status': {
+      S: 'CONFIRMED',
+    },
+  },
+  ExpressionAttributeNames: {
+    '#status': 'status',
+  },
+};
+
+
+
+
+{
+  "id": "395cf48f-2795-4ad1-88fb-dfd2501a0fad",
+  "createdAt": "2022-10-30T12:35:16.566Z",
+  "activationCode": "367649331734646600000",
+  "badges": [
+   "NEW_MEMBER"
+  ],
+  "bio": {},
+  "email": "ronny_monahan20@yahoo.com",
+  "handle": "@MekhiHowell83",
+  "name": "mekhi_howell83",
+  "role": "USER",
+  "sourceIp": "110.175.86.74",
+  "status": "UNCONFIRMED"
+ }
+*/
+
+// TODO Fails: The provided key element does not match the schema
+// I had the same issue when using GetItemCommand for the PK which is the UUID?
 export const updateUserStatus = async (
   id: string,
   userStatus: UserStatus,
 ): Promise<void> => {
   try {
-    const command = new UpdateItemCommand({
+    const input: UpdateItemCommandInput = {
       TableName: getTableName(),
       Key: marshall({ id }),
       ConditionExpression: 'attribute_exists(id)',
@@ -198,7 +267,10 @@ export const updateUserStatus = async (
       ExpressionAttributeNames: {
         '#status': 'status',
       },
-    });
+    };
+
+    const command = new UpdateItemCommand(input);
+    logger.debug('updateUserStatus', { data: { input, id, userStatus } });
     await client.send(command);
   } catch (error) {
     const { name, message } = <Error>error;

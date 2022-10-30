@@ -1,20 +1,14 @@
 import { registerUser } from 'src/services/user/register-user';
 import logger from '@/services/logger';
-import type { Context } from 'aws-lambda';
-import middyJsonBodyParser from '@middy/http-json-body-parser';
-import middy from '@middy/core';
-import httpHeaderNormalizer from '@middy/http-header-normalizer';
-import httpSecurityHeaders from '@middy/http-security-headers';
-import errorHandler from '@schibsted/middy-error-handler';
 import type {
   ValidatedAPIGatewayProxyEvent,
   ValidatedEventAPIGatewayProxyEvent,
 } from '@/types/api-gateway';
-import { jsonSchemaBodyValidator } from '@/middleware/json-schema-body-validator';
 import type { HttpError } from 'http-errors';
-import type { User, UserCreateInput } from '../types/user';
+import { middyfyWithRequestBody } from 'src/utils/lambda';
+import type { User, UserCreateInput } from '../../../types/user';
 
-const requestBodySchema = {
+const requestBodyValidationSchema = {
   type: 'object',
   properties: {
     name: {
@@ -35,13 +29,10 @@ const requestBodySchema = {
 } as const;
 
 const baseHandler: ValidatedEventAPIGatewayProxyEvent<
-  typeof requestBodySchema
+  typeof requestBodyValidationSchema
 > = async (
-  event: ValidatedAPIGatewayProxyEvent<typeof requestBodySchema>,
-  context: Context,
+  event: ValidatedAPIGatewayProxyEvent<typeof requestBodyValidationSchema>,
 ) => {
-  logger.addContext(context);
-
   const { body, requestContext } = event;
 
   // Map unsafe user input to type-safe transfer model
@@ -73,9 +64,7 @@ const baseHandler: ValidatedEventAPIGatewayProxyEvent<
   }
 };
 
-export const handler = middy(baseHandler)
-  .use(httpHeaderNormalizer())
-  .use(middyJsonBodyParser())
-  .use(jsonSchemaBodyValidator(requestBodySchema))
-  .use(httpSecurityHeaders())
-  .use(errorHandler({ exposeStackTrace: true }));
+export const handler = middyfyWithRequestBody(
+  baseHandler,
+  requestBodyValidationSchema,
+);

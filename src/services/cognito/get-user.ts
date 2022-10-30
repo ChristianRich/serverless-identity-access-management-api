@@ -25,11 +25,11 @@ export const getUserById = async (
   const command: AdminGetUserCommand = new AdminGetUserCommand(input);
 
   try {
-    logger.debug('Cognito.AdminGetUserCommandOutput', { data: input });
+    logger.debug('Cognito.AdminGetUserCommand', { data: input });
     return client.send(command);
   } catch (error) {
     const { name } = <Error>error;
-    const message = `Cognito.AdminGetUserCommandOutput: ${name}: ${error.message}`;
+    const message = `Cognito.AdminGetUserCommand: ${name}: ${error.message}`;
 
     if (name === 'UserNotFoundException') {
       logger.warn(message, { data: { id } });

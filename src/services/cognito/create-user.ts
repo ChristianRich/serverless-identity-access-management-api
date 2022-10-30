@@ -43,7 +43,7 @@ export const createUser = async (
   const command: AdminCreateUserCommand = new AdminCreateUserCommand(input);
 
   try {
-    logger.debug('Cognito.AdminCreateUserCommandOutput', { data: input });
+    logger.debug('Cognito.AdminCreateUserCommand', { data: input });
     const output: AdminCreateUserCommandOutput = await client.send(command);
 
     if (!output?.User) {
@@ -56,7 +56,7 @@ export const createUser = async (
     return output.User;
   } catch (error) {
     const { name } = <Error>error;
-    const message = `Cognito.AdminCreateUserCommandOutput: ${name}: ${error.message}`;
+    const message = `Cognito.AdminCreateUserCommand: ${name}: ${error.message}`;
 
     if (name === 'UsernameExistsException') {
       logger.warn(message, { data: email });

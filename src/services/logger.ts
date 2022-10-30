@@ -3,7 +3,6 @@ import {
   LogAttributes,
   UnformattedAttributes,
 } from '@aws-lambda-powertools/logger/lib/types';
-import { Context } from 'aws-lambda';
 
 type CustomLogFormat = LogAttributes;
 
@@ -50,9 +49,5 @@ const logger: Logger = new Logger({
   serviceName: process.env.AWS_LAMBDA_FUNCTION_NAME,
 });
 
-const getLogger = (): Logger => logger;
-
-export const setContext = (context: Context): void =>
-  getLogger().addContext(context);
-
+export const getLogger = (): Logger => logger;
 export default getLogger();

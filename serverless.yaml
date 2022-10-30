@@ -57,13 +57,15 @@ provider:
             - cognito-idp:GetGroup
             - cognito-idp:GetUser
           Resource: "*"
+          # Resource:
+          #   - Fn::GetAtt: [CogniteUserPool, Arn]
+          #   - Fn::GetAtt: [CognitoUserClient, Arn]
         - Effect: Allow
           Action:
             - dynamodb:DescribeTable
             - dynamodb:DescribeStream
             - dynamodb:ListStreams
             - dynamodb:GetRecords
-            # - dynamodb:GetShardIterator
             - dynamodb:Query
             - dynamodb:GetItem
             - dynamodb:PutItem
@@ -71,42 +73,97 @@ provider:
             - dynamodb:DeleteItem
           Resource:
             - Fn::GetAtt: [UserTable, Arn]
+            # - !Sub "${UserTable.Arn}"
+        - Effect: Allow
+          Action:
+            - dynamodb:Query
+          Resource:
+            # - !Sub "${UserTable.Arn}"
+            - !Sub "${UserTable.Arn}/index/*"
+            # - !Sub "${UserTable.Arn}/index/EmailIndex"
 functions:
-  health:
-    handler: src/handlers/health.handler
-    events:
-      - http:
-          path: health
-          method: get
-          cors: true
-  get:
-    handler: src/handlers/get.handler
+  getUserById:
+    handler: src/handlers/user/get/by-id.handler
     events:
       - http:
           path: user/{id}
           method: get
           cors: true
-  auth:
-    handler: src/handlers/auth.handler
+  getUserByName:
+    handler: src/handlers/user/get/by-name.handler
     events:
       - http:
-          path: user/auth
-          method: post
-          cors: true
-  register:
-    handler: src/handlers/register.handler
-    events:
-      - http:
-          path: user/register
-          method: post
-          cors: true
-  list:
-    handler: src/handlers/list.handler
-    events:
-      - http:
-          path: users
+          path: user/name/{name}
           method: get
           cors: true
+  getUserByEmail:
+    handler: src/handlers/user/get/by-email.handler
+    events:
+      - http:
+          path: user/email/{email}
+          method: get
+          cors: true
+  getUserByHandle:
+    handler: src/handlers/user/get/by-handle.handler
+    events:
+      - http:
+          path: user/handle/{handle}
+          method: get
+          cors: true
+  register:
+    handler: src/handlers/user/post/register.handler
+    events:
+      - http:
+          path: user
+          method: post
+          cors: true
+  login:
+    handler: src/handlers/auth/post/login.handler
+    events:
+      - http:
+          path: auth/login
+          method: post
+          cors: true
+  confirmAccount:
+    handler: src/handlers/user/get/activate.handler
+    events:
+      - http:
+          path: user/activate/{activationCode}
+          method: get
+          cors: true
+
+  # TODO Verify JWT when passed in Authorization header
+  # verifyToken:
+  #   handler: src/handlers/verify-token.handler
+  #   events:
+  #     - http:
+  #         path: auth/token/verify
+  #         method: get
+  #         cors: true
+    # TODO
+  # addBadge:
+  #   handler: src/handlers/add-badge.handler
+  #   events:
+  #     - http:
+  #         path: user/{id}/badge
+  #         method: patch
+  #         cors: true
+  # TODO
+  # removeBadge:
+  #   handler: src/handlers/remove-badge.handler
+  #   events:
+  #     - http:
+  #         path: user/{id}/badge
+  #         method: delete
+  #         cors: true
+  # TODO Usecase: Post account activation, password reset in progress, banned etc.
+  # updateStatus:
+  #   handler: src/handlers/status.handler
+  #   events:
+  #     - http:
+  #         path: user/{id}/status
+  #         method: patch
+  #         cors: true
 resources:
   Resources:
     CogniteUserPool:
@@ -170,23 +227,31 @@ resources:
         AttributeDefinitions:
           - AttributeName: id
             AttributeType: S
-          - AttributeName: name
-            AttributeType: S
           - AttributeName: createdAt
             AttributeType: S
-          - AttributeName: activationCode
+          - AttributeName: name
+            AttributeType: S
+          - AttributeName: handle
             AttributeType: S
           - AttributeName: email
+            AttributeType: S
+          - AttributeName: activationCode
             AttributeType: S
         KeySchema:
           - AttributeName: id
             KeyType: HASH
-          - AttributeName: createdAt
-            KeyType: RANGE
         GlobalSecondaryIndexes:
           - IndexName: NameIndex
             KeySchema:
               - AttributeName: name
+                KeyType: HASH
+              - AttributeName: createdAt
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+          - IndexName: HandleIndex
+            KeySchema:
+              - AttributeName: handle
                 KeyType: HASH
               - AttributeName: createdAt
                 KeyType: RANGE
