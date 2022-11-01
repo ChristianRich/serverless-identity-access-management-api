@@ -5,8 +5,8 @@ import type {
   ValidatedEventAPIGatewayProxyEvent,
 } from '@/types/api-gateway';
 import type { HttpError } from 'http-errors';
-import { middyfyWithRequestBody } from 'src/utils/lambda';
-import type { User, UserCreateInput } from '../../../types/user';
+import { middyfyWithRequestBody } from '@/middleware';
+import type { User, UserCreateInput } from '../../types/user';
 
 const requestBodyValidationSchema = {
   type: 'object',

@@ -18,7 +18,7 @@ export const getUserById = async (
   id: string,
 ): Promise<AdminGetUserCommandOutput> => {
   const input: AdminGetUserRequest = {
-    UserPoolId: getConfig(AppConfig.USER_POOL_ID),
+    UserPoolId: getConfig(AppConfig.COGNITO_POOL_ID),
     Username: id,
   };
 

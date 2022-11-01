@@ -6,7 +6,7 @@ import {
   ValidatedEventAPIGatewayProxyEvent,
 } from '@/types/api-gateway';
 import { auth } from '@/services/cognito/auth';
-import { middyfyWithRequestBody } from '@/utils/lambda';
+import { middyfyWithRequestBody } from '@/middleware';
 
 const requestBodyValidationSchema = {
   type: 'object',

@@ -9,8 +9,8 @@ import {
 } from '@aws-sdk/client-dynamodb';
 import { marshall, unmarshall } from '@aws-sdk/util-dynamodb';
 import createError from 'http-errors';
-import { getConfig } from 'src/utils/env';
-import logger from 'src/services/logger';
+import { getConfig } from '@/utils/env';
+import logger from '@/services/logger';
 import { User, UserStatus } from '@/types/user';
 
 // Docs
@@ -21,12 +21,9 @@ const client: DynamoDBClient = new DynamoDBClient({
   region: getConfig('AWS_REGION'),
 });
 
-// const documentClient: DocumentClient = new DocumentClient();
-const getTableName = (): string => getConfig('USERS_TABLE_NAME');
-
 export const createUser = async (user: User): Promise<void> => {
   const command = new PutItemCommand({
-    TableName: getTableName(),
+    TableName: getConfig('USERS_TABLE_NAME'),
     Item: marshall(user),
     ConditionExpression: 'attribute_not_exists(id)',
   });
@@ -47,7 +44,7 @@ export const createUser = async (user: User): Promise<void> => {
 export const getUserById = async (id: string): Promise<User | null> => {
   try {
     const command = new QueryCommand({
-      TableName: getTableName(),
+      TableName: getConfig('USERS_TABLE_NAME'),
       KeyConditionExpression: '#id = :s',
       ExpressionAttributeValues: marshall({
         ':s': id,
@@ -74,7 +71,7 @@ export const getUserById = async (id: string): Promise<User | null> => {
 export const getUserByName = async (name: string): Promise<User | null> => {
   try {
     const command = new QueryCommand({
-      TableName: getTableName(),
+      TableName: getConfig('USERS_TABLE_NAME'),
       IndexName: 'NameIndex',
       KeyConditionExpression: '#name = :s',
       ExpressionAttributeValues: marshall({
@@ -102,7 +99,7 @@ export const getUserByName = async (name: string): Promise<User | null> => {
 export const getUserByHandle = async (handle: string): Promise<User | null> => {
   try {
     const command = new QueryCommand({
-      TableName: getTableName(),
+      TableName: getConfig('USERS_TABLE_NAME'),
       IndexName: 'HandleIndex',
       KeyConditionExpression: 'handle = :s',
       ExpressionAttributeValues: marshall({
@@ -127,7 +124,7 @@ export const getUserByHandle = async (handle: string): Promise<User | null> => {
 export const getUserByEmail = async (email: string): Promise<User | null> => {
   try {
     const command = new QueryCommand({
-      TableName: getTableName(),
+      TableName: getConfig('USERS_TABLE_NAME'),
       IndexName: 'EmailIndex',
       KeyConditionExpression: 'email = :s',
       ExpressionAttributeValues: marshall({
@@ -154,7 +151,7 @@ export const getUserByActivationCode = async (
 ): Promise<User | null> => {
   try {
     const command = new QueryCommand({
-      TableName: getTableName(),
+      TableName: getConfig('USERS_TABLE_NAME'),
       IndexName: 'ActivationCodeIndex',
       KeyConditionExpression: 'activationCode = :s',
       ExpressionAttributeValues: marshall({
@@ -182,7 +179,7 @@ export const updateLastLoginTimeStamp = async (
 ): Promise<void> => {
   try {
     const command = new UpdateItemCommand({
-      TableName: getTableName(),
+      TableName: getConfig('USERS_TABLE_NAME'),
       Key: marshall({ id }),
       ConditionExpression: 'attribute_exists(id)',
       UpdateExpression: 'SET #lastLoginAt = :lastLoginAt',
@@ -208,61 +205,33 @@ export const updateLastLoginTimeStamp = async (
   }
 };
 
-/*
-
-{
-  TableName: 'dev.user-api.users',
-  Key: {
-    id: {
-      S: '395cf48f-2795-4ad1-88fb-dfd2501a0fad',
-    },
-  },
-  ConditionExpression: 'attribute_exists(id)',
-  UpdateExpression: 'SET #status = :status',
-  ExpressionAttributeValues: {
-    ':status': {
-      S: 'CONFIRMED',
-    },
-  },
-  ExpressionAttributeNames: {
-    '#status': 'status',
-  },
-};
-
-
-
-
-{
-  "id": "395cf48f-2795-4ad1-88fb-dfd2501a0fad",
-  "createdAt": "2022-10-30T12:35:16.566Z",
-  "activationCode": "367649331734646600000",
-  "badges": [
-   "NEW_MEMBER"
-  ],
-  "bio": {},
-  "email": "ronny_monahan20@yahoo.com",
-  "handle": "@MekhiHowell83",
-  "name": "mekhi_howell83",
-  "role": "USER",
-  "sourceIp": "110.175.86.74",
-  "status": "UNCONFIRMED"
- }
-*/
-
-// TODO Fails: The provided key element does not match the schema
-// I had the same issue when using GetItemCommand for the PK which is the UUID?
 export const updateUserStatus = async (
   id: string,
   userStatus: UserStatus,
 ): Promise<void> => {
+  if (
+    ![
+      'UNCONFIRMED',
+      'CONFIRMED',
+      'ARCHIVED',
+      'COMPROMISED',
+      'SUSPENDED',
+      'UNKNOWN',
+      'RESET_REQUIRED',
+      'FORCE_CHANGE_PASSWORD',
+    ].includes(String(userStatus).toUpperCase())
+  ) {
+    throw createError(400, `Invalid userStatus ${userStatus}`);
+  }
+
   try {
     const input: UpdateItemCommandInput = {
-      TableName: getTableName(),
+      TableName: getConfig('USERS_TABLE_NAME'),
       Key: marshall({ id }),
       ConditionExpression: 'attribute_exists(id)',
       UpdateExpression: 'SET #status = :status',
       ExpressionAttributeValues: marshall({
-        ':status': userStatus,
+        ':status': userStatus.toUpperCase(),
       }),
       ExpressionAttributeNames: {
         '#status': 'status',
@@ -295,7 +264,7 @@ export const deleteActivationCode = async (
 ): Promise<void> => {
   try {
     const command = new UpdateItemCommand({
-      TableName: getTableName(),
+      TableName: getConfig('USERS_TABLE_NAME'),
       Key: marshall({ id }),
       ConditionExpression: 'attribute_exists(id)',
       UpdateExpression: 'remove #activationCode',
@@ -323,7 +292,7 @@ export const deleteUser = async (
   throwOnError = false,
 ): Promise<void> => {
   const command: DeleteItemCommand = new DeleteItemCommand({
-    TableName: getTableName(),
+    TableName: getConfig('USERS_TABLE_NAME'),
     Key: marshall({ id }),
     ConditionExpression: 'attribute_exists(id)',
   });

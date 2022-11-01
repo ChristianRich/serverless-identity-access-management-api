@@ -1,10 +1,10 @@
+import type { Logger } from '@aws-lambda-powertools/logger';
 import middy from '@middy/core';
 import {
   APIGatewayProxyEvent,
   APIGatewayProxyResult,
   Context,
 } from 'aws-lambda';
-import type { Logger } from '@aws-lambda-powertools/logger';
 
 export const setLoggerContext = (
   logger: Logger,

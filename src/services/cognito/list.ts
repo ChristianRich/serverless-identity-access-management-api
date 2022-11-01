@@ -19,7 +19,7 @@ export const listUsers = async (): Promise<ListUsersCommandOutput> => {
     // Filter: "string",
     // Limit: 100,
     // PaginationToken: "string",
-    UserPoolId: getConfig(AppConfig.USER_POOL_ID),
+    UserPoolId: getConfig(AppConfig.COGNITO_POOL_ID),
   };
 
   const command: ListUsersCommand = new ListUsersCommand(input);

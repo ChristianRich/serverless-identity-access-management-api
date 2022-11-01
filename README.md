@@ -1,13 +1,23 @@
 # User Management & Authentication API (S2S)
 
-"Out of the box" solution for user management, user sign-ups, account activation, authentication and authorization.
+Serverless API for secure user management and authentication.
+
+## Features
+
+- User management (DynamoDB)
+  - Registration
+  - Account activation
+  - Password reset
+  - Querying and updating user records
+- Security (Cognito)
+  - Authorization using login and access token flow
+  - Authentication using ID token verification
 
 Currently only supports sign-up and login using email and password - no social account support (feel free to raise a PR).
 
 ## DynamoDB StreamEvents
 
-Used to trigger other Lambdas to dispatch emails to users for e.g account activation and password reset emails.
-Events are triggered when rows are inserted or modified.
+Used to trigger email dispatcher Lambda for e.g account activation and password reset emails.
 
 ## AWS resources
 

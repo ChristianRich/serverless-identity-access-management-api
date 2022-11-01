@@ -36,11 +36,13 @@ provider:
     minimumCompressionSize: 1024
     shouldStartNameWithService: true
   environment:
+    # JWT_EXPIRY: ${ssm:/aws/reference/secretsmanager/dev/user-api/jwt-expiry}
+    JWT_EXPIRY: "2d"
     AWS_NODEJS_CONNECTION_REUSE_ENABLED: "1"
     NODE_OPTIONS: "--enable-source-maps --stack-trace-limit=1000"
     STAGE: ${sls:stage}
-    USER_POOL_ID: { Ref: CogniteUserPool }
-    CLIENT_ID: { Ref: CognitoUserClient }
+    COGNITO_POOL_ID: { Ref: CogniteUserPool }
+    COGNITO_CLIENT_ID: { Ref: CognitoUserClient }
     USERS_TABLE_NAME: ${self:custom.usersTableName}
   iam:
     role:
@@ -83,64 +85,70 @@ provider:
             # - !Sub "${UserTable.Arn}/index/EmailIndex"
 functions:
   getUserById:
-    handler: src/handlers/user/get/by-id.handler
+    handler: src/handlers/user/by-id.handler
     events:
       - http:
           path: user/{id}
           method: get
           cors: true
   getUserByName:
-    handler: src/handlers/user/get/by-name.handler
+    handler: src/handlers/user/by-name.handler
     events:
       - http:
           path: user/name/{name}
           method: get
           cors: true
   getUserByEmail:
-    handler: src/handlers/user/get/by-email.handler
+    handler: src/handlers/user/by-email.handler
     events:
       - http:
           path: user/email/{email}
           method: get
           cors: true
   getUserByHandle:
-    handler: src/handlers/user/get/by-handle.handler
+    handler: src/handlers/user/by-handle.handler
     events:
       - http:
           path: user/handle/{handle}
           method: get
           cors: true
   register:
-    handler: src/handlers/user/post/register.handler
+    handler: src/handlers/user/register.handler
     events:
       - http:
           path: user
           method: post
           cors: true
-  login:
-    handler: src/handlers/auth/post/login.handler
-    events:
-      - http:
-          path: auth/login
-          method: post
-          cors: true
   confirmAccount:
-    handler: src/handlers/user/get/activate.handler
+    handler: src/handlers/user/activate.handler
     events:
       - http:
           path: user/activate/{activationCode}
           method: get
           cors: true
+  updateUserStatus:
+    handler: src/handlers/user/update-status.handler
+    events:
+      - http:
+          path: user/{id}/status/{status}
+          method: patch
+          cors: true
+  login:
+    handler: src/handlers/auth/login.handler
+    events:
+      - http:
+          path: auth/login
+          method: post
+          cors: true
+  verifyToken:
+    handler: src/handlers/auth/verify-token.handler
+    events:
+      - http:
+          path: auth/token/{tokenType}/verify/{token}
+          method: get
+          cors: true
 
-  # TODO Verify JWT when passed in Authorization header
-  # verifyToken:
-  #   handler: src/handlers/verify-token.handler
-  #   events:
-  #     - http:
-  #         path: auth/token/verify
-  #         method: get
-  #         cors: true
-    # TODO
+  # TODO
   # addBadge:
   #   handler: src/handlers/add-badge.handler
   #   events:

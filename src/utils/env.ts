@@ -35,6 +35,7 @@ export const isAWS = (env: NodeJS.ProcessEnv = process.env): boolean =>
   'LAMBDA_TASK_ROOT' in env &&
   !isOffline();
 
+// *** SECURITY WARNING ***
 export const getEnvVars = (
   env: NodeJS.ProcessEnv = process.env,
 ): Record<string, string> => omitBy(env, (_v, k) => k.startsWith('_npm'));

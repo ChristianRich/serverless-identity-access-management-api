@@ -19,7 +19,7 @@ export const setPassword = async (
 ): Promise<void> => {
   const input: AdminSetUserPasswordCommandInput = {
     Password: password,
-    UserPoolId: getConfig(AppConfig.USER_POOL_ID),
+    UserPoolId: getConfig(AppConfig.COGNITO_POOL_ID),
     Username: email,
     Permanent: true,
   };

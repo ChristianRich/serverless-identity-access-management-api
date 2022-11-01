@@ -21,7 +21,7 @@ export const createUser = async (
   name: string,
 ): Promise<UserType> => {
   const input: AdminCreateUserRequest = {
-    UserPoolId: getConfig(AppConfig.USER_POOL_ID),
+    UserPoolId: getConfig(AppConfig.COGNITO_POOL_ID),
     Username: email,
     UserAttributes: [
       {

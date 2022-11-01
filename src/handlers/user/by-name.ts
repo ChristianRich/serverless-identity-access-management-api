@@ -1,23 +1,27 @@
 import logger from 'src/services/logger';
-import type { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
+import type {
+  APIGatewayProxyEvent,
+  APIGatewayProxyHandler,
+  APIGatewayProxyResult,
+} from 'aws-lambda';
 import type { HttpError } from 'http-errors';
-import { middyfy } from '@/utils/lambda';
-import type { User } from '@/types/user';
-import createError from 'http-errors';
-import { getUserById } from '@/services/dynamo/user';
+import { middyfy } from '@/middleware';
+import { getUserByName } from '@/services/dynamo/user';
 import { UserModel } from '@/models/user-model';
+import { User } from '@/types/user';
+import createError from 'http-errors';
 
-const baseHandler = async (
+const baseHandler: APIGatewayProxyHandler = async (
   event: APIGatewayProxyEvent,
 ): Promise<APIGatewayProxyResult> => {
   const { pathParameters } = event;
-  const { id } = pathParameters;
+  const { name } = pathParameters;
 
   try {
-    const user: User | null = await getUserById(id);
+    const user: User | null = await getUserByName(name);
 
     if (!user) {
-      throw createError(404);
+      throw createError(400);
     }
 
     return {
@@ -26,7 +30,9 @@ const baseHandler = async (
     };
   } catch (error) {
     const { name, message, statusCode = 500 } = <Error | HttpError>error;
-    logger.error(`Error getting user by id: ${name} ${message}`, { data: id });
+    logger.error(`Error getting user by name: ${name} ${message}`, {
+      data: name,
+    });
 
     return {
       statusCode,

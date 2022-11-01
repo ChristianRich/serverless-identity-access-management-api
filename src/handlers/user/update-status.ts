@@ -1,17 +1,21 @@
 import logger from 'src/services/logger';
-import type { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
+import type {
+  APIGatewayProxyEvent,
+  APIGatewayProxyResult,
+  UserStatus,
+} from 'aws-lambda';
 import type { HttpError } from 'http-errors';
-import { middyfy } from '@/utils/lambda';
-import { activate } from '@/services/user/activate';
+import { middyfy } from '@/middleware';
+import { updateUserStatus } from '@/services/dynamo/user';
 
 const baseHandler = async (
   event: APIGatewayProxyEvent,
 ): Promise<APIGatewayProxyResult> => {
   const { pathParameters } = event;
-  const { activationCode } = pathParameters;
+  const { id, status } = pathParameters;
 
   try {
-    await activate(activationCode);
+    await updateUserStatus(id, <UserStatus>status);
 
     return {
       statusCode: 200,
@@ -19,8 +23,8 @@ const baseHandler = async (
     };
   } catch (error) {
     const { name, message, statusCode = 500 } = <Error | HttpError>error;
-    logger.error(`Error activating user: ${name} ${message}`, {
-      data: activationCode,
+    logger.error(`Error updating user status: ${name} ${message}`, {
+      data: { id, status },
     });
 
     return {

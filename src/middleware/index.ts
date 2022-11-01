@@ -9,7 +9,6 @@ import logger from '@/services/logger';
 
 const exposeStackTrace = process.env.NODE_ENV !== 'prd';
 
-// Requests without request body
 export const middyfy = (handler): middy.MiddyfiedHandler =>
   middy(handler)
     .use(setLoggerContext(logger))
@@ -17,7 +16,6 @@ export const middyfy = (handler): middy.MiddyfiedHandler =>
     .use(httpSecurityHeaders())
     .use(errorHandler({ exposeStackTrace }));
 
-// Requests with body requireing input schema validation
 export const middyfyWithRequestBody = (
   handler,
   requestBodyValidationSchema: Record<string, unknown>,
