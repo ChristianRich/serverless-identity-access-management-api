@@ -2,7 +2,11 @@ import logger from 'src/services/logger';
 import type { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import type { HttpError } from 'http-errors';
 import { middyfyWithRequestBody } from '@/middleware';
-import { updateData, UpdateUserDataMode } from '@/services/user/update-data';
+import {
+  updateData,
+  UpdateUserDataMode,
+} from '@/services/dynamo/user-table/update-data';
+import createError from 'http-errors';
 
 const requestBodyValidationSchema = {
   type: 'object',
@@ -14,19 +18,31 @@ const requestBodyValidationSchema = {
 const baseHandler = async (
   event: APIGatewayProxyEvent,
 ): Promise<APIGatewayProxyResult> => {
-  const { pathParameters, body, queryStringParameters } = event;
+  const { pathParameters, body, requestContext } = event;
   const { id, status } = pathParameters;
-  const { merge } = queryStringParameters;
+  const { httpMethod } = requestContext;
 
-  // Dodgy ..
+  let mode: UpdateUserDataMode;
+
+  if (httpMethod === 'PUT') {
+    mode = 'OVERWRITE';
+  }
+
+  if (httpMethod === 'PATCH') {
+    mode = 'MERGE';
+  }
+
+  if (!mode) {
+    throw createError(400, `Invalid http method ${httpMethod}`);
+  }
+
+  // Receiving unstructured data
   const data: Record<string, unknown> = body as unknown as Record<
     string,
     unknown
   >;
 
-  const mode: UpdateUserDataMode = merge === '0' ? 'OVERWRITE' : 'MERGE';
-
-  logger.debug('Update user data', { data, merge, queryStringParameters });
+  logger.debug('Update user data', { data, mode, httpMethod });
 
   try {
     await updateData(id, data, mode);

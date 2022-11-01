@@ -1,6 +1,5 @@
 import { User, UserBadge } from '../types/user';
 
-// User shape delivered to client
 export class UserModel {
   readonly id: string;
   readonly name: string;
@@ -12,10 +11,10 @@ export class UserModel {
   readonly role: string;
   readonly status: string;
   readonly bio?: Record<string, unknown>;
-  readonly badges: UserBadge[];
+  // readonly badges: UserBadge[];
+  readonly badges: UserBadge[] | string[];
   readonly data?: Record<string, unknown>;
   readonly $devTest: Record<string, unknown> | undefined; // Handy for automated testing flows
-
   constructor(user: User) {
     this.id = user.id;
     this.name = user.name;
@@ -26,15 +25,18 @@ export class UserModel {
     this.role = user.role;
     this.status = user.status;
     this.bio = user.bio;
-    this.badges = [
-      // TODO map function with cached lookup to other new table?
-      {
-        name: 'FOUNDING_MEMBER',
-        description: 'Founding Member',
-        iconUrl: 'https://example.com/icon.svg',
-      },
-    ];
+    this.badges = user.badges;
+    // this.badges = [
+    //   // TODO map function with cached lookup to other new table?
+    //   {
+    //     name: 'FOUNDING_MEMBER',
+    //     description: 'Founding Member',
+    //     iconUrl: 'https://example.com/icon.svg',
+    //   },
+    // ];
     this.data = user.data;
+
+    // TODO
     this.$devTest = {
       activationCode: user?.activationCode,
     };

@@ -9,7 +9,7 @@ import { addUserToGroups } from '../cognito/groups/add-groups';
 import { createUser as createCognitoUser } from '../cognito/create-user';
 import { setPassword } from '../cognito/set-password';
 import logger from '../logger';
-import { createUser as createDynamoDbUser } from '../dynamo/user';
+import { createUser as createDynamoDbUser } from '../dynamo/user-table/create';
 
 // Create Cognito user and link ID to DynamoDB partition key
 export const registerUser = async (input: UserCreateInput): Promise<User> => {

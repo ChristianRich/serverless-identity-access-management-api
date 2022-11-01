@@ -5,7 +5,7 @@ import { middyfy } from '@/middleware';
 import { UserModel } from '@/models/user-model';
 import { User } from '@/types/user';
 import createError from 'http-errors';
-import { getUserByHandle } from '@/services/dynamo/user';
+import { getUserByHandle } from '@/services/dynamo/user-table/get';
 
 const baseHandler = async (
   event: APIGatewayProxyEvent,

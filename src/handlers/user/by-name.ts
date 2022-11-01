@@ -6,10 +6,10 @@ import type {
 } from 'aws-lambda';
 import type { HttpError } from 'http-errors';
 import { middyfy } from '@/middleware';
-import { getUserByName } from '@/services/dynamo/user';
 import { UserModel } from '@/models/user-model';
 import { User } from '@/types/user';
 import createError from 'http-errors';
+import { getUserByName } from '@/services/dynamo/user-table/get';
 
 const baseHandler: APIGatewayProxyHandler = async (
   event: APIGatewayProxyEvent,

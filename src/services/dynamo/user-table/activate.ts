@@ -1,7 +1,8 @@
 import type { User, UserStatus } from '@/types/user';
 
 import createHttpError from 'http-errors';
-import { getUserByActivationCode, updateUserStatus } from '../dynamo/user';
+import { getUserByActivationCode } from './get';
+import { updateUserStatus } from './user';
 
 export const activate = async (activationCode: string): Promise<void> => {
   const user: User | null = await getUserByActivationCode(activationCode);

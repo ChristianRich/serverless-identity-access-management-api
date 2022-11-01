@@ -2,10 +2,10 @@ import logger from 'src/services/logger';
 import type { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import type { HttpError } from 'http-errors';
 import { middyfy } from '@/middleware';
-import { getUserByEmail } from '@/services/dynamo/user';
 import createError from 'http-errors';
 import { User } from '@/types/user';
 import { UserModel } from '@/models/user-model';
+import { getUserByEmail } from '@/services/dynamo/user-table/get';
 
 const baseHandler = async (
   event: APIGatewayProxyEvent,

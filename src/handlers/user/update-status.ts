@@ -6,7 +6,7 @@ import type {
 } from 'aws-lambda';
 import type { HttpError } from 'http-errors';
 import { middyfy } from '@/middleware';
-import { updateUserStatus } from '@/services/dynamo/user';
+import { updateUserStatus } from '@/services/dynamo/user-table/user';
 
 const baseHandler = async (
   event: APIGatewayProxyEvent,

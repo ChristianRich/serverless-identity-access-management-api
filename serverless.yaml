@@ -149,12 +149,19 @@ functions:
           path: user/{id}/status/{status}
           method: patch
           cors: true
-  updateUserData:
-    handler: src/handlers/user/update-data.handler
+  putUserData:
+    handler: src/handlers/user/user-data.handler
     events:
       - http:
           path: user/{id}/data/update
           method: put
+          cors: true
+  patchUserData:
+    handler: src/handlers/user/user-data.handler
+    events:
+      - http:
+          path: user/{id}/data/update
+          method: patch
           cors: true
   login:
     handler: src/handlers/auth/login.handler
@@ -170,30 +177,20 @@ functions:
           path: auth/token/{tokenType}/verify/{token}
           method: get
           cors: true
-  # TODO
-  # addBadge:
-  #   handler: src/handlers/add-badge.handler
-  #   events:
-  #     - http:
-  #         path: user/{id}/badge
-  #         method: patch
-  #         cors: true
-  # TODO
-  # removeBadge:
-  #   handler: src/handlers/remove-badge.handler
-  #   events:
-  #     - http:
-  #         path: user/{id}/badge
-  #         method: delete
-  #         cors: true
-  # TODO Usecase: Post account activation, password reset in progress, banned etc.
-  # updateStatus:
-  #   handler: src/handlers/status.handler
-  #   events:
-  #     - http:
-  #         path: user/{id}/status
-  #         method: patch
-  #         cors: true
+  issueBadge:
+    handler: src/handlers/user/badge.handler
+    events:
+      - http:
+          path: user/{id}/badge/{name}
+          method: post
+          cors: true
+  revokeBadge:
+    handler: src/handlers/user/badge.handler
+    events:
+      - http:
+          path: user/{id}/badge/{name}
+          method: delete
+          cors: true
 resources:
   Resources:
     CognitoUserPool:

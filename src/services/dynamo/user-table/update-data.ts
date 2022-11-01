@@ -1,15 +1,20 @@
 import type { User } from '@/types/user';
 
 import createHttpError from 'http-errors';
-import { getUserById, updateUserData } from '../dynamo/user';
+import { getUserById } from './get';
+import { updateUserData } from './user';
 
 export type UpdateUserDataMode = 'OVERWRITE' | 'MERGE';
 
 export const updateData = async (
   id: string,
-  update: Record<string, unknown>,
+  update: Record<string, unknown> = {},
   mode: UpdateUserDataMode = 'MERGE',
 ): Promise<void> => {
+  if (!Object.keys(update).length) {
+    return;
+  }
+
   if (mode === 'OVERWRITE') {
     await updateUserData(id, update);
   }
