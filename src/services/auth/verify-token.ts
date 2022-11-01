@@ -1,4 +1,4 @@
-import { AppConfig } from '@/constants';
+import { Config } from '@/constants';
 import { getConfig } from '@/utils/env';
 import { CognitoJwtVerifier } from 'aws-jwt-verify';
 import logger from '../logger';
@@ -10,8 +10,8 @@ export const verifyToken = async (
   tokenUse: TokenUse = 'access',
 ): Promise<unknown> => {
   const verifier = CognitoJwtVerifier.create({
-    userPoolId: getConfig(AppConfig.COGNITO_POOL_ID),
-    clientId: getConfig(AppConfig.COGNITO_CLIENT_ID),
+    userPoolId: getConfig(Config.COGNITO_POOL_ID),
+    clientId: getConfig(Config.COGNITO_CLIENT_ID),
     tokenUse,
   });
 

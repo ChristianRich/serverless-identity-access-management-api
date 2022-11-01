@@ -11,6 +11,9 @@ export type User = {
   readonly role: UserRole;
   readonly status: UserStatus;
   readonly bio?: UserBio;
+
+  // CRUD accessable unstructured JSON data, associated with the user
+  readonly data?: Record<string, unknown>;
   readonly badges: UserBadgeName[];
 };
 

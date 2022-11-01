@@ -13,6 +13,7 @@ export class UserModel {
   readonly status: string;
   readonly bio?: Record<string, unknown>;
   readonly badges: UserBadge[];
+  readonly data?: Record<string, unknown>;
   readonly $devTest: Record<string, unknown> | undefined; // Handy for automated testing flows
 
   constructor(user: User) {
@@ -33,7 +34,7 @@ export class UserModel {
         iconUrl: 'https://example.com/icon.svg',
       },
     ];
-
+    this.data = user.data;
     this.$devTest = {
       activationCode: user?.activationCode,
     };

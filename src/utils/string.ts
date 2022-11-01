@@ -10,6 +10,7 @@ export const beginsWithDigit = (str: string): boolean => !!str.match(/^\d/);
 export const toPascalCase = (str: string): string =>
   camelCase(str).replace(/^(.)/, toUpper);
 
+// TODO Replace with well-tested npm module
 export const getRandomId = (length = 10): string => {
   const create = (): string =>
     String(

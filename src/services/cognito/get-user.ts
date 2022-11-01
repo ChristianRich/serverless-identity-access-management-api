@@ -7,7 +7,7 @@ import {
 import logger from 'src/services/logger';
 import { getConfig } from 'src/utils/env';
 import createError from 'http-errors';
-import { AppConfig } from '@/constants';
+import { Config } from '@/constants';
 
 const client: CognitoIdentityProviderClient = new CognitoIdentityProviderClient(
   {},
@@ -18,7 +18,7 @@ export const getUserById = async (
   id: string,
 ): Promise<AdminGetUserCommandOutput> => {
   const input: AdminGetUserRequest = {
-    UserPoolId: getConfig(AppConfig.COGNITO_POOL_ID),
+    UserPoolId: getConfig(Config.COGNITO_POOL_ID),
     Username: id,
   };
 

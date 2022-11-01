@@ -6,7 +6,7 @@ import {
 } from '@aws-sdk/client-cognito-identity-provider';
 import { getConfig } from 'src/utils/env';
 import logger from 'src/services/logger';
-import { AppConfig } from '@/constants';
+import { Config } from '@/constants';
 import { groupExists } from './get-group';
 
 const client: CognitoIdentityProviderClient = new CognitoIdentityProviderClient(
@@ -29,7 +29,7 @@ export const createGroup = async (
 
   const input: CreateGroupCommandInput = {
     GroupName: name,
-    UserPoolId: getConfig(AppConfig.COGNITO_POOL_ID),
+    UserPoolId: getConfig(Config.COGNITO_POOL_ID),
   };
 
   const command: CreateGroupCommand = new CreateGroupCommand(input);

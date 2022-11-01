@@ -11,7 +11,7 @@ import { setPassword } from '../cognito/set-password';
 import logger from '../logger';
 import { createUser as createDynamoDbUser } from '../dynamo/user';
 
-// Create Cognito user and link ID to DynamoDB partition key where user profile is stored
+// Create Cognito user and link ID to DynamoDB partition key
 export const registerUser = async (input: UserCreateInput): Promise<User> => {
   logger.debug('Start user registration flow', { data: input });
 
@@ -42,6 +42,7 @@ export const registerUser = async (input: UserCreateInput): Promise<User> => {
     status: 'UNCONFIRMED',
     badges: ['NEW_MEMBER'],
     bio: {},
+    data: {},
   };
 
   await createDynamoDbUser(user);
@@ -65,8 +66,7 @@ export const registerCognitoUser = async (
   return user;
 };
 
-// Extract UUID from Cognito user
-// This is used as foreign key for the DynamoDB partition key in the Users table, hence linking the two resources
+// Extract UUID from newly minted Cognito user and pin to DynamodDB record as partition key
 const getCognitoUUID = (user: UserType): string | undefined => {
   const { Attributes } = user;
   const sub: AttributeType | undefined = Attributes.find(

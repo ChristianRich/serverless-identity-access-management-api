@@ -12,6 +12,7 @@ import createError from 'http-errors';
 import { getConfig } from '@/utils/env';
 import logger from '@/services/logger';
 import { User, UserStatus } from '@/types/user';
+import { Config } from '@/constants';
 
 // Docs
 // Error types
@@ -23,7 +24,7 @@ const client: DynamoDBClient = new DynamoDBClient({
 
 export const createUser = async (user: User): Promise<void> => {
   const command = new PutItemCommand({
-    TableName: getConfig('USERS_TABLE_NAME'),
+    TableName: getConfig(Config.USERS_TABLE_NAME),
     Item: marshall(user),
     ConditionExpression: 'attribute_not_exists(id)',
   });
@@ -44,7 +45,7 @@ export const createUser = async (user: User): Promise<void> => {
 export const getUserById = async (id: string): Promise<User | null> => {
   try {
     const command = new QueryCommand({
-      TableName: getConfig('USERS_TABLE_NAME'),
+      TableName: getConfig(Config.USERS_TABLE_NAME),
       KeyConditionExpression: '#id = :s',
       ExpressionAttributeValues: marshall({
         ':s': id,
@@ -71,7 +72,7 @@ export const getUserById = async (id: string): Promise<User | null> => {
 export const getUserByName = async (name: string): Promise<User | null> => {
   try {
     const command = new QueryCommand({
-      TableName: getConfig('USERS_TABLE_NAME'),
+      TableName: getConfig(Config.USERS_TABLE_NAME),
       IndexName: 'NameIndex',
       KeyConditionExpression: '#name = :s',
       ExpressionAttributeValues: marshall({
@@ -99,7 +100,7 @@ export const getUserByName = async (name: string): Promise<User | null> => {
 export const getUserByHandle = async (handle: string): Promise<User | null> => {
   try {
     const command = new QueryCommand({
-      TableName: getConfig('USERS_TABLE_NAME'),
+      TableName: getConfig(Config.USERS_TABLE_NAME),
       IndexName: 'HandleIndex',
       KeyConditionExpression: 'handle = :s',
       ExpressionAttributeValues: marshall({
@@ -124,7 +125,7 @@ export const getUserByHandle = async (handle: string): Promise<User | null> => {
 export const getUserByEmail = async (email: string): Promise<User | null> => {
   try {
     const command = new QueryCommand({
-      TableName: getConfig('USERS_TABLE_NAME'),
+      TableName: getConfig(Config.USERS_TABLE_NAME),
       IndexName: 'EmailIndex',
       KeyConditionExpression: 'email = :s',
       ExpressionAttributeValues: marshall({
@@ -151,7 +152,7 @@ export const getUserByActivationCode = async (
 ): Promise<User | null> => {
   try {
     const command = new QueryCommand({
-      TableName: getConfig('USERS_TABLE_NAME'),
+      TableName: getConfig(Config.USERS_TABLE_NAME),
       IndexName: 'ActivationCodeIndex',
       KeyConditionExpression: 'activationCode = :s',
       ExpressionAttributeValues: marshall({
@@ -173,13 +174,42 @@ export const getUserByActivationCode = async (
   }
 };
 
+export const updateUserData = async (
+  id: string,
+  data: Record<string, unknown>,
+): Promise<void> => {
+  try {
+    const command = new UpdateItemCommand({
+      TableName: getConfig(Config.USERS_TABLE_NAME),
+      Key: marshall({ id }),
+      ConditionExpression: 'attribute_exists(id)',
+      UpdateExpression: 'SET #data = :data',
+      ExpressionAttributeValues: marshall({
+        ':data': data,
+      }),
+      ExpressionAttributeNames: {
+        '#data': 'data',
+      },
+    });
+    await client.send(command);
+  } catch (error) {
+    const { name, message } = <Error>error;
+    logger.error(`updateUserData ${name}: ${message}`);
+
+    if (name === 'ConditionalCheckFailedException') {
+      throw createError(404);
+    }
+    throw createError(500, 'Error updating user data');
+  }
+};
+
 export const updateLastLoginTimeStamp = async (
   id: string,
   throwOnError = false, // Option to suppress exceptions
 ): Promise<void> => {
   try {
     const command = new UpdateItemCommand({
-      TableName: getConfig('USERS_TABLE_NAME'),
+      TableName: getConfig(Config.USERS_TABLE_NAME),
       Key: marshall({ id }),
       ConditionExpression: 'attribute_exists(id)',
       UpdateExpression: 'SET #lastLoginAt = :lastLoginAt',
@@ -201,7 +231,7 @@ export const updateLastLoginTimeStamp = async (
     if (name === 'ConditionalCheckFailedException') {
       throw createError(404);
     }
-    throw createError(500, 'Error updating user data');
+    throw createError(500, 'Error updating lastLoginAt timestamp');
   }
 };
 
@@ -226,7 +256,7 @@ export const updateUserStatus = async (
 
   try {
     const input: UpdateItemCommandInput = {
-      TableName: getConfig('USERS_TABLE_NAME'),
+      TableName: getConfig(Config.USERS_TABLE_NAME),
       Key: marshall({ id }),
       ConditionExpression: 'attribute_exists(id)',
       UpdateExpression: 'SET #status = :status',
@@ -264,7 +294,7 @@ export const deleteActivationCode = async (
 ): Promise<void> => {
   try {
     const command = new UpdateItemCommand({
-      TableName: getConfig('USERS_TABLE_NAME'),
+      TableName: getConfig(Config.USERS_TABLE_NAME),
       Key: marshall({ id }),
       ConditionExpression: 'attribute_exists(id)',
       UpdateExpression: 'remove #activationCode',
@@ -292,7 +322,7 @@ export const deleteUser = async (
   throwOnError = false,
 ): Promise<void> => {
   const command: DeleteItemCommand = new DeleteItemCommand({
-    TableName: getConfig('USERS_TABLE_NAME'),
+    TableName: getConfig(Config.USERS_TABLE_NAME),
     Key: marshall({ id }),
     ConditionExpression: 'attribute_exists(id)',
   });

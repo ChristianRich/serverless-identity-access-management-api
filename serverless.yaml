@@ -41,7 +41,7 @@ provider:
     AWS_NODEJS_CONNECTION_REUSE_ENABLED: "1"
     NODE_OPTIONS: "--enable-source-maps --stack-trace-limit=1000"
     STAGE: ${sls:stage}
-    COGNITO_POOL_ID: { Ref: CogniteUserPool }
+    COGNITO_POOL_ID: { Ref: CognitoUserPool }
     COGNITO_CLIENT_ID: { Ref: CognitoUserClient }
     USERS_TABLE_NAME: ${self:custom.usersTableName}
   iam:
@@ -60,7 +60,7 @@ provider:
             - cognito-idp:GetUser
           Resource: "*"
           # Resource:
-          #   - Fn::GetAtt: [CogniteUserPool, Arn]
+          #   - Fn::GetAtt: [CognitoUserPool, Arn]
           #   - Fn::GetAtt: [CognitoUserClient, Arn]
         - Effect: Allow
           Action:
@@ -84,6 +84,22 @@ provider:
             - !Sub "${UserTable.Arn}/index/*"
             # - !Sub "${UserTable.Arn}/index/EmailIndex"
 functions:
+  getUser:
+    handler: src/handlers/user/me.handler
+    events:
+      - http:
+          path: user/me
+          method: get
+          cors: true
+          authorizer:
+            name: IdTokenAuthorizer
+            type: COGNITO_USER_POOLS
+            arn:
+              Fn::GetAtt:
+                - CognitoUserPool
+                - Arn
+            claims:
+              - email # passed to event handler
   getUserById:
     handler: src/handlers/user/by-id.handler
     events:
@@ -133,6 +149,13 @@ functions:
           path: user/{id}/status/{status}
           method: patch
           cors: true
+  updateUserData:
+    handler: src/handlers/user/update-data.handler
+    events:
+      - http:
+          path: user/{id}/data/update
+          method: put
+          cors: true
   login:
     handler: src/handlers/auth/login.handler
     events:
@@ -147,7 +170,6 @@ functions:
           path: auth/token/{tokenType}/verify/{token}
           method: get
           cors: true
-
   # TODO
   # addBadge:
   #   handler: src/handlers/add-badge.handler
@@ -174,7 +196,7 @@ functions:
   #         cors: true
 resources:
   Resources:
-    CogniteUserPool:
+    CognitoUserPool:
       Type: AWS::Cognito::UserPool
       Properties:
         UserPoolName: serverless-auth-pool
@@ -204,27 +226,27 @@ resources:
       Properties:
         Description: "Users"
         GroupName: "USER"
-        UserPoolId: { Ref: CogniteUserPool }
+        UserPoolId: { Ref: CognitoUserPool }
     CognitoUserPoolGroupModerator:
       Type: AWS::Cognito::UserPoolGroup
       Properties:
         Description: "Moderators"
         GroupName: "MODERATOR"
-        UserPoolId: { Ref: CogniteUserPool }
+        UserPoolId: { Ref: CognitoUserPool }
     CognitoUserPoolGroupAdmin:
       Type: AWS::Cognito::UserPoolGroup
       Properties:
         Description: "Admins"
         GroupName: "ADMIN"
-        UserPoolId: { Ref: CogniteUserPool }
+        UserPoolId: { Ref: CognitoUserPool }
     CognitoUserClient:
       Type: AWS::Cognito::UserPoolClient
       Properties:
         ClientName: ${self:custom.cognitoClientName}
         GenerateSecret: false
-        UserPoolId: { Ref: CogniteUserPool }
-        AccessTokenValidity: 5
-        IdTokenValidity: 5
+        UserPoolId: { Ref: CognitoUserPool }
+        AccessTokenValidity: 6 # expiry in hours
+        IdTokenValidity: 6 # expiry in hours
         ExplicitAuthFlows:
           - ALLOW_REFRESH_TOKEN_AUTH
           - ALLOW_ADMIN_USER_PASSWORD_AUTH
@@ -289,4 +311,4 @@ resources:
     #       DefaultAuthorizer: MyCognitoAuthorizer
     #       Authorizers:
     #         MyCognitoAuthorizer:
-    #           UserPoolArn: !GetAtt CogniteUserPool.Arn
+    #           UserPoolArn: !GetAtt CognitoUserPool.Arn

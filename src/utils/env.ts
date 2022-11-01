@@ -1,11 +1,11 @@
 import { omitBy } from 'lodash';
 import createError from 'http-errors';
 import logger from '@/services/logger';
-import { AppConfig } from '@/constants';
+import { Config } from '@/constants';
 
-// Centralised point for accessing `process.env` variables
+// Centralised and safe point of accessing `process.env` variables
 export const getConfig = (
-  key: AppConfig,
+  key: Config | string,
   isRequired = true,
   fallbackValue?: string,
 ): string | undefined => {
@@ -15,12 +15,12 @@ export const getConfig = (
     const message = `Configuration error: '${key}' is required`;
 
     if (isRequired) {
-      throw createError(500, message); // TODO integrate Middy error handler MW
+      throw createError(500, message);
     }
     logger.warn(
       `Configuration warning: Optional key '${key}' accessed, but not present in runtime config. Fallback value: ${fallbackValue}`,
     );
-    return fallbackValue ?? undefined;
+    return fallbackValue || undefined;
   }
   return value;
 };

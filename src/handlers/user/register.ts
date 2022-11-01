@@ -1,4 +1,4 @@
-import { registerUser } from 'src/services/user/register-user';
+import { registerUser } from '@/services/user/register';
 import logger from '@/services/logger';
 import type {
   ValidatedAPIGatewayProxyEvent,

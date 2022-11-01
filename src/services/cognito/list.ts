@@ -7,7 +7,7 @@ import {
 
 import { getConfig } from 'src/utils/env';
 import logger from 'src/services/logger';
-import { AppConfig } from '@/constants';
+import { Config } from '@/constants';
 
 const client: CognitoIdentityProviderClient = new CognitoIdentityProviderClient(
   {},
@@ -19,7 +19,7 @@ export const listUsers = async (): Promise<ListUsersCommandOutput> => {
     // Filter: "string",
     // Limit: 100,
     // PaginationToken: "string",
-    UserPoolId: getConfig(AppConfig.COGNITO_POOL_ID),
+    UserPoolId: getConfig(Config.COGNITO_POOL_ID),
   };
 
   const command: ListUsersCommand = new ListUsersCommand(input);
