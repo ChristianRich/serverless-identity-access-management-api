@@ -49,3 +49,5 @@ TBA
 - Miro
 - Unit tests
 - Data migration script
+
+![Dynobase](./docs/images/dynobase.png)
