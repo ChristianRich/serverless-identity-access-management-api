@@ -25,7 +25,6 @@ export const updateData = async (
     throw createHttpError(404);
   }
 
-  // Merge with existing data
   const mergeUpdate: Record<string, unknown> = Object.assign(
     user?.data || {},
     update,

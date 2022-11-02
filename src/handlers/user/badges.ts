@@ -23,15 +23,15 @@ const baseHandler = async (
   }
 
   if (!operation) {
-    throw createError(400, `Request method not supported`);
+    throw createError(400, 'Unsupported request method');
   }
 
   try {
-    await operation;
+    const result: string[] = await operation;
 
     return {
       statusCode: 200,
-      body: '',
+      body: JSON.stringify(result),
     };
   } catch (error) {
     const { name, message, statusCode = 500 } = <Error | HttpError>error;

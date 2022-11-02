@@ -3,8 +3,9 @@ import {
   UpdateItemCommand,
   AttributeValue,
   UpdateItemCommandInput,
+  UpdateItemCommandOutput,
 } from '@aws-sdk/client-dynamodb';
-import { marshall, convertToAttr } from '@aws-sdk/util-dynamodb';
+import { marshall, convertToAttr, unmarshall } from '@aws-sdk/util-dynamodb';
 import createError from 'http-errors';
 import { getConfig } from '@/utils/env';
 import logger from '@/services/logger';
@@ -19,11 +20,11 @@ const client: DynamoDBClient = new DynamoDBClient({
 export const addBadge = async (
   id: string,
   name: UserBadgeName | string,
-): Promise<void> => {
+): Promise<string[]> => {
   const attributeValue: AttributeValue = convertToAttr([name]);
 
   if (await hasBadge(id, name as UserBadgeName)) {
-    return;
+    throw createError(400, `Badge '${name}' already issued to user ${id}`);
   }
 
   const input: UpdateItemCommandInput = {
@@ -38,14 +39,18 @@ export const addBadge = async (
     ReturnValues: 'ALL_NEW',
   };
 
-  try {
-    logger.debug('UpdateItemCommandInput', { data: input, attributeValue });
+  const command = new UpdateItemCommand(input);
 
-    const command = new UpdateItemCommand(input);
-    await client.send(command);
+  try {
+    logger.debug('addBadge', { data: input, attributeValue });
+    const output: UpdateItemCommandOutput = await client.send(command);
+
+    const user: User = <User>unmarshall(output.Attributes);
+    const { badges: newValues }: { badges: UserBadgeName[] } = user;
+    return <string[]>newValues;
   } catch (error) {
     const { name, message } = <Error>error;
-    logger.error(`Error updating user badges ${name}: ${message}`, {
+    logger.error(`Error adding badge ${name}: ${message}`, {
       data: '',
     });
 
@@ -57,28 +62,37 @@ export const addBadge = async (
   }
 };
 
-// TODO
 export const removeBadge = async (
   id: string,
   name: UserBadgeName | string,
-): Promise<void> => {
-  const attributeValue: AttributeValue = convertToAttr([name]);
+): Promise<string[]> => {
+  const badges: string[] = await getBadges(id);
+  const idx = badges.indexOf(name);
+
+  if (idx === -1) {
+    throw createError(
+      404,
+      `Error revoking badge '${name}': Not issued to user ${id}`,
+    );
+  }
+
   const input: UpdateItemCommandInput = {
     TableName: getConfig(Config.USERS_TABLE_NAME),
     Key: marshall({ id }),
     ConditionExpression: 'attribute_exists(id)',
-    UpdateExpression: 'SET #badges = :badges',
-    ExpressionAttributeValues: {
-      ':badges': attributeValue,
-    },
-    ExpressionAttributeNames: { '#badges': 'badges' },
+    UpdateExpression: `REMOVE badges[${idx}]`,
+    ReturnValues: 'ALL_NEW',
   };
 
   try {
-    logger.debug('UpdateItemCommandInput', { data: input, attributeValue });
+    logger.debug('removeBadge', { data: input, idx, name });
 
     const command = new UpdateItemCommand(input);
-    await client.send(command);
+    const output: UpdateItemCommandOutput = await client.send(command);
+
+    const user: User = <User>unmarshall(output.Attributes);
+    const { badges: newValues }: { badges: UserBadgeName[] } = user;
+    return <string[]>newValues;
   } catch (error) {
     const { name, message } = <Error>error;
     logger.error(`Error updating user badges ${name}: ${message}`, {
@@ -105,4 +119,14 @@ export const hasBadge = async (
 
   const { badges }: { badges: UserBadgeName[] } = user;
   return badges?.length && badges.includes(badge);
+};
+
+export const getBadges = async (id: string): Promise<string[]> => {
+  const user: User | null = await getUserById(id);
+
+  if (!user) {
+    throw createError(404);
+  }
+
+  return user.badges as string[];
 };

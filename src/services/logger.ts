@@ -36,7 +36,7 @@ class CustomLogFormatter extends LogFormatter {
   public formatAttributes(attributes: UnformattedAttributes): CustomLogFormat {
     const timestamp = this.formatTimestamp(attributes.timestamp);
 
-    // Simplied logs for localhost development when using serverless-offline plug-in
+    // Simplied logs for localhost development with serverless-offline
     return process.env.IS_OFFLINE === 'true'
       ? logformatLocal(attributes)
       : logformatAWS(attributes, timestamp);

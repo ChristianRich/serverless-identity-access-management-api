@@ -11,9 +11,7 @@ export type User = {
   readonly role: UserRole;
   readonly status: UserStatus;
   readonly bio?: UserBio;
-
-  // CRUD accessable unstructured JSON data, associated with the user
-  readonly data?: Record<string, unknown>;
+  readonly data?: Record<string, unknown>; // CRUD supported unstructured JSON data, associated with this user
   readonly badges: UserBadgeName[];
 };
 
@@ -54,10 +52,7 @@ export type UserStatus =
   | 'RESET_REQUIRED'
   | 'FORCE_CHANGE_PASSWORD';
 
-// Stored in DynamoDB as type DocumentClient.DynamoDbSet
-// 'NOOP' is a work-around DynamoDB's limitation of not allowing empty Sets
 export type UserBadgeName =
-  | 'NOOP'
   | 'NEW_MEMBER'
   | 'CONVERSATION_STARTER'
   | 'VERIFIED_EMAIL'

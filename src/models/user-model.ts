@@ -11,7 +11,6 @@ export class UserModel {
   readonly role: string;
   readonly status: string;
   readonly bio?: Record<string, unknown>;
-  // readonly badges: UserBadge[];
   readonly badges: UserBadge[] | string[];
   readonly data?: Record<string, unknown>;
   readonly $devTest: Record<string, unknown> | undefined; // Handy for automated testing flows
@@ -26,17 +25,8 @@ export class UserModel {
     this.status = user.status;
     this.bio = user.bio;
     this.badges = user.badges;
-    // this.badges = [
-    //   // TODO map function with cached lookup to other new table?
-    //   {
-    //     name: 'FOUNDING_MEMBER',
-    //     description: 'Founding Member',
-    //     iconUrl: 'https://example.com/icon.svg',
-    //   },
-    // ];
     this.data = user.data;
-
-    // TODO
+    // TODO Remove
     this.$devTest = {
       activationCode: user?.activationCode,
     };

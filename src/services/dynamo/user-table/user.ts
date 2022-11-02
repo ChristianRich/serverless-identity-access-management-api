@@ -11,11 +11,6 @@ import logger from '@/services/logger';
 import { UserStatus } from '@/types/user';
 import { Config } from '@/constants';
 
-// import AWS from '@aws-sdk/util-dynamodb';
-// Docs
-// Error types
-// https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/clients/client-dynamodb/classes/dynamodbserviceexception.html
-
 const client: DynamoDBClient = new DynamoDBClient({
   region: getConfig('AWS_REGION'),
 });
@@ -51,7 +46,7 @@ export const updateUserData = async (
 
 export const updateLastLoginTimeStamp = async (
   id: string,
-  throwOnError = false, // Option to suppress exceptions
+  throwOnError = false,
 ): Promise<void> => {
   try {
     const command = new UpdateItemCommand({
@@ -129,11 +124,6 @@ export const updateUserStatus = async (
   }
 };
 
-/**
- * Delete the activationCode from the user record subsequent to account activation
- * @param id
- * @param throwOnError Suppress exceptions from propagating
- */
 export const deleteActivationCode = async (
   id: string,
   throwOnError = false,
@@ -190,32 +180,3 @@ export const deleteUser = async (
     throw createError(500, `Error deleting user ${id}`);
   }
 };
-
-// just use Array.from(set) // where set is the "badges" field contents
-
-// https://medium.com/hackernoon/safe-list-updates-with-dynamodb-adc44f2e7d3
-// export const toArrayfromSet = (set?: string[]): string[] => {
-//   if (!set) {
-//     return [];
-//   }
-//   if (Array.isArray(set)) {
-//     return set;
-//   }
-//   const { values } = set;
-
-//   if (!Array.isArray(values)) {
-//     throw new Error(
-//       'Invalid DocumentClient.DynamoDbSet: Type Array expected for values',
-//     );
-//   }
-//   return <string[]>values;
-// };
-
-// export const fromArrayToSet = (
-//   values: string[],
-// ): DocumentClient.DynamoDbSet => {
-//   if (!values?.length) {
-//     throw Error('Cannot convert empty array into DocumentClient.DynamoDbSet');
-//   }
-//   return documentClient.createSet(values);
-// };

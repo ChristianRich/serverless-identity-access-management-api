@@ -10,12 +10,11 @@ custom:
   usersTableName: ${sls:stage}.${self:service}.users
   cognitoClientName: my-cognito-client # defined on creation in AWS Console > Cognito > Userpools
   serverless-offline:
-    allowCache: true # Prevemt serverless-offline from eating all of your memory
+    allowCache: true # Preserve memory
     useChildProcesses: true
-    # httpsProtocol: "dev-certs"
-    # httpPort: 4000
-    # stageVariables:
-    #   foo: "bar"
+    httpPort: 3000
+    stageVariables:
+      foo: "bar"
   prune:
     automatic: true
     number: 3
@@ -54,14 +53,10 @@ provider:
             - cognito-idp:AdminCreateUser
             - cognito-idp:AdminSetUserPassword
             - cognito-idp:AdminAddUserToGroup
-            - cognito-idp:ListUsers
             - cognito-idp:CreateGroup
             - cognito-idp:GetGroup
             - cognito-idp:GetUser
           Resource: "*"
-          # Resource:
-          #   - Fn::GetAtt: [CognitoUserPool, Arn]
-          #   - Fn::GetAtt: [CognitoUserClient, Arn]
         - Effect: Allow
           Action:
             - dynamodb:DescribeTable
@@ -80,8 +75,8 @@ provider:
           Action:
             - dynamodb:Query
           Resource:
-            # - !Sub "${UserTable.Arn}"
             - !Sub "${UserTable.Arn}/index/*"
+            # - !Sub "${UserTable.Arn}"
             # - !Sub "${UserTable.Arn}/index/EmailIndex"
 functions:
   getUser:
@@ -178,14 +173,14 @@ functions:
           method: get
           cors: true
   issueBadge:
-    handler: src/handlers/user/badge.handler
+    handler: src/handlers/user/badges.handler
     events:
       - http:
           path: user/{id}/badge/{name}
           method: post
           cors: true
   revokeBadge:
-    handler: src/handlers/user/badge.handler
+    handler: src/handlers/user/badges.handler
     events:
       - http:
           path: user/{id}/badge/{name}
@@ -242,8 +237,8 @@ resources:
         ClientName: ${self:custom.cognitoClientName}
         GenerateSecret: false
         UserPoolId: { Ref: CognitoUserPool }
-        AccessTokenValidity: 6 # expiry in hours
-        IdTokenValidity: 6 # expiry in hours
+        AccessTokenValidity: 6 # exp in hours
+        IdTokenValidity: 6 # exp in hours
         ExplicitAuthFlows:
           - ALLOW_REFRESH_TOKEN_AUTH
           - ALLOW_ADMIN_USER_PASSWORD_AUTH
