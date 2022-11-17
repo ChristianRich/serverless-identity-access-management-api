@@ -17,25 +17,27 @@ const client: DynamoDBClient = new DynamoDBClient({
 
 export const updateUserData = async (
   id: string,
-  data: Record<string, unknown>,
+  data: Record<string, unknown>, // TODO use JSON type from npm type-fest
 ): Promise<void> => {
+  const input: UpdateItemCommandInput = {
+    TableName: getConfig(Config.USERS_TABLE_NAME),
+    Key: marshall({ id }),
+    ConditionExpression: 'attribute_exists(id)',
+    UpdateExpression: 'SET #data = :data',
+    ExpressionAttributeValues: marshall({
+      ':data': data,
+    }),
+    ExpressionAttributeNames: {
+      '#data': 'data',
+    },
+  };
+
   try {
-    const command = new UpdateItemCommand({
-      TableName: getConfig(Config.USERS_TABLE_NAME),
-      Key: marshall({ id }),
-      ConditionExpression: 'attribute_exists(id)',
-      UpdateExpression: 'SET #data = :data',
-      ExpressionAttributeValues: marshall({
-        ':data': data,
-      }),
-      ExpressionAttributeNames: {
-        '#data': 'data',
-      },
-    });
+    const command: UpdateItemCommand = new UpdateItemCommand(input);
     await client.send(command);
   } catch (error) {
     const { name, message } = <Error>error;
-    logger.error(`updateUserData ${name}: ${message}`);
+    logger.error(`updateUserData ${name}: ${message}`, { data: { input } });
 
     if (name === 'ConditionalCheckFailedException') {
       throw createError(404);
@@ -48,23 +50,27 @@ export const updateLastLoginTimeStamp = async (
   id: string,
   throwOnError = false,
 ): Promise<void> => {
+  const input: UpdateItemCommandInput = {
+    TableName: getConfig(Config.USERS_TABLE_NAME),
+    Key: marshall({ id }),
+    ConditionExpression: 'attribute_exists(id)',
+    UpdateExpression: 'SET #lastLoginAt = :lastLoginAt',
+    ExpressionAttributeValues: marshall({
+      ':lastLoginAt': new Date().toISOString(),
+    }),
+    ExpressionAttributeNames: {
+      '#lastLoginAt': 'lastLoginAt',
+    },
+  };
+
   try {
-    const command = new UpdateItemCommand({
-      TableName: getConfig(Config.USERS_TABLE_NAME),
-      Key: marshall({ id }),
-      ConditionExpression: 'attribute_exists(id)',
-      UpdateExpression: 'SET #lastLoginAt = :lastLoginAt',
-      ExpressionAttributeValues: marshall({
-        ':lastLoginAt': new Date().toISOString(),
-      }),
-      ExpressionAttributeNames: {
-        '#lastLoginAt': 'lastLoginAt',
-      },
-    });
+    const command: UpdateItemCommand = new UpdateItemCommand(input);
     await client.send(command);
   } catch (error) {
     const { name, message } = <Error>error;
-    logger.error(`updateLastLoginTimeStamp ${name}: ${message}`);
+    logger.error(`updateLastLoginTimeStamp ${name}: ${message}`, {
+      data: { input },
+    });
 
     if (!throwOnError) {
       return;
@@ -95,26 +101,26 @@ export const updateUserStatus = async (
     throw createError(400, `Invalid userStatus ${userStatus}`);
   }
 
-  try {
-    const input: UpdateItemCommandInput = {
-      TableName: getConfig(Config.USERS_TABLE_NAME),
-      Key: marshall({ id }),
-      ConditionExpression: 'attribute_exists(id)',
-      UpdateExpression: 'SET #status = :status',
-      ExpressionAttributeValues: marshall({
-        ':status': userStatus.toUpperCase(),
-      }),
-      ExpressionAttributeNames: {
-        '#status': 'status',
-      },
-    };
+  const input: UpdateItemCommandInput = {
+    TableName: getConfig(Config.USERS_TABLE_NAME),
+    Key: marshall({ id }),
+    ConditionExpression: 'attribute_exists(id)',
+    UpdateExpression: 'SET #status = :status',
+    ExpressionAttributeValues: marshall({
+      ':status': userStatus.toUpperCase(),
+    }),
+    ExpressionAttributeNames: {
+      '#status': 'status',
+    },
+  };
 
-    const command = new UpdateItemCommand(input);
-    logger.debug('updateUserStatus', { data: { input, id, userStatus } });
+  try {
+    const command: UpdateItemCommand = new UpdateItemCommand(input);
+    logger.debug('updateUserStatus', { data: { input } });
     await client.send(command);
   } catch (error) {
     const { name, message } = <Error>error;
-    logger.error(`updateUserStatus ${name}: ${message}`);
+    logger.error(`updateUserStatus ${name}: ${message}`, { data: { input } });
 
     if (name === 'ConditionalCheckFailedException') {
       throw createError(404);
@@ -128,18 +134,21 @@ export const deleteActivationCode = async (
   id: string,
   throwOnError = false,
 ): Promise<void> => {
+  const input: UpdateItemCommandInput = {
+    TableName: getConfig(Config.USERS_TABLE_NAME),
+    Key: marshall({ id }),
+    ConditionExpression: 'attribute_exists(id)',
+    UpdateExpression: 'remove #activationCode',
+    ExpressionAttributeNames: { '#activationCode': 'activationCode' },
+  };
   try {
-    const command = new UpdateItemCommand({
-      TableName: getConfig(Config.USERS_TABLE_NAME),
-      Key: marshall({ id }),
-      ConditionExpression: 'attribute_exists(id)',
-      UpdateExpression: 'remove #activationCode',
-      ExpressionAttributeNames: { '#activationCode': 'activationCode' },
-    });
+    const command = new UpdateItemCommand(input);
     await client.send(command);
   } catch (error) {
     const { name, message } = <Error>error;
-    logger.error(`deleteActivationCode ${name}: ${message}`);
+    logger.error(`deleteActivationCode ${name}: ${message}`, {
+      data: { input },
+    });
 
     if (!throwOnError) {
       return;
@@ -153,6 +162,7 @@ export const deleteActivationCode = async (
   }
 };
 
+// TODO Soft delete by setting status to ARCHIVED
 export const deleteUser = async (
   id: string,
   throwOnError = false,

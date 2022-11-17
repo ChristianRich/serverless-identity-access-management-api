@@ -1,7 +1,7 @@
+import { CognitoJwtVerifier } from 'aws-jwt-verify';
 import { Config } from '@/constants';
 import { getConfig } from '@/utils/env';
-import { CognitoJwtVerifier } from 'aws-jwt-verify';
-import logger from '../logger';
+import logger from '@/services/logger';
 
 type TokenUse = 'access' | 'id';
 
@@ -19,7 +19,7 @@ export const verifyToken = async (
     const payload = await verifier.verify(token);
     return payload;
   } catch (error) {
-    logger.warn('Token validation failed', { data: token });
+    logger.warn('Token validation failed', { data: { token, tokenUse } });
     throw error;
   }
 };

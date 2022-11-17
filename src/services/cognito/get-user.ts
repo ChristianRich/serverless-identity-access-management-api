@@ -32,11 +32,11 @@ export const getUserById = async (
     const message = `Cognito.AdminGetUserCommand: ${name}: ${error.message}`;
 
     if (name === 'UserNotFoundException') {
-      logger.warn(message, { data: { id } });
+      logger.warn(message, { data: { input } });
       throw createError(404);
     }
 
-    logger.error(message, { data: { id } });
+    logger.error(message, { data: { input } });
     throw error;
   }
 };

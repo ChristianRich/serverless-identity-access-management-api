@@ -13,11 +13,11 @@ const client: CognitoIdentityProviderClient = new CognitoIdentityProviderClient(
   {},
 );
 
-// Don't use this, create groups via serverless.yaml config
+// Note: Initial user groups for USER, MODERATOR and ADMIN are created via serverless.yml
 export const createGroup = async (
   name: string,
 ): Promise<CreateGroupCommandOutput | undefined> => {
-  const exists: boolean = await groupExists(name);
+  const exists = await groupExists(name);
 
   if (exists) {
     logger.warn(
@@ -42,8 +42,7 @@ export const createGroup = async (
   } catch (error) {
     const { message, name } = <Error>error;
     logger.error(`Cognito.CreateGroupCommand: ${name}: ${message}`, {
-      error,
-      input,
+      data: { input },
     });
     throw error;
   }

@@ -1,6 +1,7 @@
 import {
   DynamoDBClient,
   QueryCommand,
+  QueryCommandInput,
   QueryCommandOutput,
 } from '@aws-sdk/client-dynamodb';
 import { marshall, unmarshall } from '@aws-sdk/util-dynamodb';
@@ -15,18 +16,19 @@ const client: DynamoDBClient = new DynamoDBClient({
 });
 
 export const getUserById = async (id: string): Promise<User | null> => {
-  try {
-    const command = new QueryCommand({
-      TableName: getConfig(Config.USERS_TABLE_NAME),
-      KeyConditionExpression: '#id = :s',
-      ExpressionAttributeValues: marshall({
-        ':s': id,
-      }),
-      ExpressionAttributeNames: {
-        '#id': 'id',
-      },
-    });
+  const input: QueryCommandInput = {
+    TableName: getConfig(Config.USERS_TABLE_NAME),
+    KeyConditionExpression: '#id = :s',
+    ExpressionAttributeValues: marshall({
+      ':s': id,
+    }),
+    ExpressionAttributeNames: {
+      '#id': 'id',
+    },
+  };
 
+  try {
+    const command = new QueryCommand(input);
     const data: QueryCommandOutput = await client.send(command);
     const { Items } = data;
 
@@ -36,25 +38,26 @@ export const getUserById = async (id: string): Promise<User | null> => {
     return <User>unmarshall(Items[0]);
   } catch (error) {
     const { name, message } = <Error>error;
-    logger.error(`getUserById ${name}: ${message}`);
+    logger.error(`getUserById ${name}: ${message}`, { data: { input } });
     throw createError(500, 'Error getting user by id');
   }
 };
 
 export const getUserByName = async (name: string): Promise<User | null> => {
-  try {
-    const command = new QueryCommand({
-      TableName: getConfig(Config.USERS_TABLE_NAME),
-      IndexName: 'NameIndex',
-      KeyConditionExpression: '#name = :s',
-      ExpressionAttributeValues: marshall({
-        ':s': name,
-      }),
-      ExpressionAttributeNames: {
-        '#name': 'name',
-      },
-    });
+  const input: QueryCommandInput = {
+    TableName: getConfig(Config.USERS_TABLE_NAME),
+    IndexName: 'NameIndex',
+    KeyConditionExpression: '#name = :s',
+    ExpressionAttributeValues: marshall({
+      ':s': name,
+    }),
+    ExpressionAttributeNames: {
+      '#name': 'name',
+    },
+  };
 
+  try {
+    const command: QueryCommand = new QueryCommand(input);
     const data: QueryCommandOutput = await client.send(command);
     const { Items } = data;
 
@@ -64,22 +67,23 @@ export const getUserByName = async (name: string): Promise<User | null> => {
     return <User>unmarshall(Items[0]);
   } catch (error) {
     const { name, message } = <Error>error;
-    logger.error(`getUserByName ${name}: ${message}`);
-    throw createError(500, 'Error fetching user profile');
+    logger.error(`getUserByName ${name}: ${message}`, { data: { input } });
+    throw createError(500, 'Error getting user by name');
   }
 };
 
 export const getUserByHandle = async (handle: string): Promise<User | null> => {
-  try {
-    const command = new QueryCommand({
-      TableName: getConfig(Config.USERS_TABLE_NAME),
-      IndexName: 'HandleIndex',
-      KeyConditionExpression: 'handle = :s',
-      ExpressionAttributeValues: marshall({
-        ':s': handle,
-      }),
-    });
+  const input: QueryCommandInput = {
+    TableName: getConfig(Config.USERS_TABLE_NAME),
+    IndexName: 'HandleIndex',
+    KeyConditionExpression: 'handle = :s',
+    ExpressionAttributeValues: marshall({
+      ':s': handle,
+    }),
+  };
 
+  try {
+    const command: QueryCommand = new QueryCommand(input);
     const data: QueryCommandOutput = await client.send(command);
     const { Items } = data;
 
@@ -89,22 +93,23 @@ export const getUserByHandle = async (handle: string): Promise<User | null> => {
     return <User>unmarshall(Items[0]);
   } catch (error) {
     const { name, message } = <Error>error;
-    logger.error(`getUserByEmail ${name}: ${message}`);
-    throw createError(500, 'Error fetching user profile');
+    logger.error(`getUserByEmail ${name}: ${message}`, { data: { input } });
+    throw createError(500, 'Error getting user by handle');
   }
 };
 
 export const getUserByEmail = async (email: string): Promise<User | null> => {
-  try {
-    const command = new QueryCommand({
-      TableName: getConfig(Config.USERS_TABLE_NAME),
-      IndexName: 'EmailIndex',
-      KeyConditionExpression: 'email = :s',
-      ExpressionAttributeValues: marshall({
-        ':s': email,
-      }),
-    });
+  const input: QueryCommandInput = {
+    TableName: getConfig(Config.USERS_TABLE_NAME),
+    IndexName: 'EmailIndex',
+    KeyConditionExpression: 'email = :s',
+    ExpressionAttributeValues: marshall({
+      ':s': email,
+    }),
+  };
 
+  try {
+    const command: QueryCommand = new QueryCommand(input);
     const data: QueryCommandOutput = await client.send(command);
     const { Items } = data;
 
@@ -114,24 +119,25 @@ export const getUserByEmail = async (email: string): Promise<User | null> => {
     return <User>unmarshall(Items[0]);
   } catch (error) {
     const { name, message } = <Error>error;
-    logger.error(`getUserByEmail ${name}: ${message}`);
-    throw createError(500, 'Error fetching user profile');
+    logger.error(`getUserByEmail ${name}: ${message}`, { data: { input } });
+    throw createError(500, 'Error getting user by email');
   }
 };
 
 export const getUserByActivationCode = async (
   activationCode: string,
 ): Promise<User | null> => {
-  try {
-    const command = new QueryCommand({
-      TableName: getConfig(Config.USERS_TABLE_NAME),
-      IndexName: 'ActivationCodeIndex',
-      KeyConditionExpression: 'activationCode = :s',
-      ExpressionAttributeValues: marshall({
-        ':s': activationCode,
-      }),
-    });
+  const input: QueryCommandInput = {
+    TableName: getConfig(Config.USERS_TABLE_NAME),
+    IndexName: 'ActivationCodeIndex',
+    KeyConditionExpression: 'activationCode = :s',
+    ExpressionAttributeValues: marshall({
+      ':s': activationCode,
+    }),
+  };
 
+  try {
+    const command: QueryCommand = new QueryCommand(input);
     const data: QueryCommandOutput = await client.send(command);
     const { Items } = data;
 
@@ -141,7 +147,9 @@ export const getUserByActivationCode = async (
     return <User>unmarshall(Items[0]);
   } catch (error) {
     const { name, message } = <Error>error;
-    logger.error(`getUserByActivationCode ${name}: ${message}`);
-    throw createError(500, 'Error getting user from activation code');
+    logger.error(`getUserByActivationCode ${name}: ${message}`, {
+      data: { input },
+    });
+    throw createError(500, 'Error getting user by activation code');
   }
 };

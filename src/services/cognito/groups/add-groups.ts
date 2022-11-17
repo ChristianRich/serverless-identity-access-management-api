@@ -7,12 +7,13 @@ import {
 import { getConfig } from 'src/utils/env';
 import logger from 'src/services/logger';
 import { Config } from '@/constants';
+import createError from 'http-errors';
 
 const client: CognitoIdentityProviderClient = new CognitoIdentityProviderClient(
   {},
 );
 
-// Adds a user to a single group
+// Add user to a single group
 export const addUserToGroup = async (
   email: string,
   group: string,
@@ -27,7 +28,7 @@ export const addUserToGroup = async (
     input,
   );
 
-  logger.debug('Cognito.AdminAddUserToGroupCommand', { data: input });
+  logger.debug('Cognito.AdminAddUserToGroupCommand', { data: { input } });
 
   return client.send<
     AdminAddUserToGroupCommandInput,
@@ -35,13 +36,16 @@ export const addUserToGroup = async (
   >(command);
 };
 
-// Adds a user to a one or multiple group
+// Add user to a one or multiple group
 export const addUserToGroups = async (
   email: string,
   groups: string[],
 ): Promise<void> => {
   if (!groups.length) {
-    return;
+    throw createError(
+      400,
+      `Error adding user ${email} to group: At least one group must be provided`,
+    );
   }
 
   try {
@@ -54,7 +58,7 @@ export const addUserToGroups = async (
   } catch (error) {
     const { message, name } = <Error>error;
     logger.error(`Cognito.AdminAddUserToGroupCommand: ${name}: ${message}`, {
-      error,
+      data: { email, groups },
     });
     throw error;
   }

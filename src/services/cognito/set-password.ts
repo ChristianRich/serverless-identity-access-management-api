@@ -24,12 +24,11 @@ export const setPassword = async (
     Permanent: true,
   };
 
-  const command: AdminSetUserPasswordCommand = new AdminSetUserPasswordCommand(
-    input,
-  );
-
   try {
-    logger.debug('Cognito.AdminSetUserPasswordCommand', { data: input });
+    logger.debug('Cognito.AdminSetUserPasswordCommand', { data: { input } }); // TODO Obfuscate PII
+    const command: AdminSetUserPasswordCommand = new AdminSetUserPasswordCommand(
+      input,
+    );
     await client.send(command);
   } catch (error) {
     const { message, name } = <Error>error;

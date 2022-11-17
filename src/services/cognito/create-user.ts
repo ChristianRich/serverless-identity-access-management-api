@@ -40,28 +40,28 @@ export const createUser = async (
     MessageAction: 'SUPPRESS',
   };
 
-  const command: AdminCreateUserCommand = new AdminCreateUserCommand(input);
-
   try {
     logger.debug('Cognito.AdminCreateUserCommand', { data: input });
+    const command: AdminCreateUserCommand = new AdminCreateUserCommand(input);
     const output: AdminCreateUserCommandOutput = await client.send(command);
+    const { User: user } = output;
 
-    if (!output?.User) {
+    if (!user) {
       throw createError(
         500,
-        'Exception during account registration: User is null',
+        'Exception during account registration: User created failed',
       );
     }
 
-    return output.User;
+    return user;
   } catch (error) {
     const { name } = <Error>error;
     const message = `Cognito.AdminCreateUserCommand: ${name}: ${error.message}`;
 
     if (name === 'UsernameExistsException') {
-      logger.warn(message, { data: email });
+      logger.warn(message, { data: { input } });
     } else {
-      logger.error(message, { data: email });
+      logger.error(message, { data: { input } });
     }
 
     throw error;

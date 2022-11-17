@@ -9,6 +9,7 @@ import logger from '@/services/logger';
 
 const exposeStackTrace = process.env.NODE_ENV !== 'prd';
 
+// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export const middyfy = (handler): middy.MiddyfiedHandler =>
   middy(handler)
     .use(setLoggerContext(logger))
@@ -17,6 +18,7 @@ export const middyfy = (handler): middy.MiddyfiedHandler =>
     .use(errorHandler({ exposeStackTrace }));
 
 export const middyfyWithRequestBody = (
+  // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
   handler,
   requestBodyValidationSchema: Record<string, unknown>,
 ): middy.MiddyfiedHandler =>

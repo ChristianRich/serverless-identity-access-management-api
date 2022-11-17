@@ -28,8 +28,7 @@ export const getGroup = async (
   } catch (error) {
     const { message, name } = <Error>error;
     logger.error(`Cognito.GetGroupCommand: ${name}: ${message}`, {
-      error,
-      input,
+      data: { input },
     });
     throw error;
   }

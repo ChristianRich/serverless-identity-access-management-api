@@ -17,19 +17,23 @@ const client: DynamoDBClient = new DynamoDBClient({
   region: getConfig('AWS_REGION'),
 });
 
+// Add a new badge to a user and return a list of badges
 export const addBadge = async (
-  id: string,
-  name: UserBadgeName | string,
-): Promise<string[]> => {
-  const attributeValue: AttributeValue = convertToAttr([name]);
+  userId: string,
+  badgeName: UserBadgeName,
+): Promise<UserBadgeName[]> => {
+  const attributeValue: AttributeValue = convertToAttr([badgeName]);
 
-  if (await hasBadge(id, name as UserBadgeName)) {
-    throw createError(400, `Badge '${name}' already issued to user ${id}`);
+  if (await hasBadge(userId, badgeName)) {
+    throw createError(
+      400,
+      `Badge '${badgeName}' already issued to user ${userId}`,
+    );
   }
 
   const input: UpdateItemCommandInput = {
     TableName: getConfig(Config.USERS_TABLE_NAME),
-    Key: marshall({ id }),
+    Key: marshall({ id: userId }),
     UpdateExpression:
       'SET badges = list_append(if_not_exists(badges, :empty_list), :new_value)',
     ExpressionAttributeValues: {
@@ -39,94 +43,95 @@ export const addBadge = async (
     ReturnValues: 'ALL_NEW',
   };
 
-  const command = new UpdateItemCommand(input);
+  logger.debug('addBadge', { data: input, attributeValue });
+
+  const command: UpdateItemCommand = new UpdateItemCommand(input);
 
   try {
-    logger.debug('addBadge', { data: input, attributeValue });
     const output: UpdateItemCommandOutput = await client.send(command);
 
     const user: User = <User>unmarshall(output.Attributes);
     const { badges: newValues }: { badges: UserBadgeName[] } = user;
-    return <string[]>newValues;
+    return newValues;
   } catch (error) {
     const { name, message } = <Error>error;
     logger.error(`Error adding badge ${name}: ${message}`, {
-      data: '',
+      data: { input },
     });
 
     if (name === 'ConditionalCheckFailedException') {
       throw createError(404);
     }
 
-    throw createError(500, 'Error updating user data');
+    throw createError(500, `Error issuing badge ${badgeName}`);
   }
 };
 
 export const removeBadge = async (
-  id: string,
-  name: UserBadgeName | string,
-): Promise<string[]> => {
-  const badges: string[] = await getBadges(id);
-  const idx = badges.indexOf(name);
+  userId: string,
+  badgeName: UserBadgeName,
+): Promise<UserBadgeName[]> => {
+  const badges: string[] = await getBadges(userId);
+  const idx: number = badges.indexOf(badgeName);
 
   if (idx === -1) {
     throw createError(
       404,
-      `Error revoking badge '${name}': Not issued to user ${id}`,
+      `Error revoking badge '${badgeName}': Not issued to user ${userId}`,
     );
   }
 
   const input: UpdateItemCommandInput = {
     TableName: getConfig(Config.USERS_TABLE_NAME),
-    Key: marshall({ id }),
+    Key: marshall({ id: userId }),
     ConditionExpression: 'attribute_exists(id)',
     UpdateExpression: `REMOVE badges[${idx}]`,
     ReturnValues: 'ALL_NEW',
   };
 
   try {
-    logger.debug('removeBadge', { data: input, idx, name });
-
+    logger.debug(`Revoking user badge ${badgeName} for user ${userId}`, {
+      data: { input },
+    });
     const command = new UpdateItemCommand(input);
     const output: UpdateItemCommandOutput = await client.send(command);
-
     const user: User = <User>unmarshall(output.Attributes);
     const { badges: newValues }: { badges: UserBadgeName[] } = user;
-    return <string[]>newValues;
+    return newValues;
   } catch (error) {
     const { name, message } = <Error>error;
-    logger.error(`Error updating user badges ${name}: ${message}`, {
-      data: '',
-    });
+    const errorMessage = `Error revoking user badge ${name} ${message}`;
+
+    logger.error(errorMessage, { data: { input } });
 
     if (name === 'ConditionalCheckFailedException') {
-      throw createError(404);
+      throw createError(404, `Badge not found ${badgeName}`);
     }
 
-    throw createError(500, 'Error updating user data');
+    throw createError(500, errorMessage);
   }
 };
 
 export const hasBadge = async (
-  id: string,
-  badge: UserBadgeName,
+  userId: string,
+  badgeName: UserBadgeName,
 ): Promise<boolean> => {
-  const user: User | null = await getUserById(id);
+  const user: User | null = await getUserById(userId);
 
   if (!user) {
     throw createError(404);
   }
 
   const { badges }: { badges: UserBadgeName[] } = user;
-  return badges?.length && badges.includes(badge);
+  return badges?.length && badges.includes(badgeName);
 };
 
-export const getBadges = async (id: string): Promise<string[]> => {
-  const user: User | null = await getUserById(id);
+export const getBadges = async (userId: string): Promise<UserBadgeName[]> => {
+  const user: User | null = await getUserById(userId);
 
   if (!user) {
-    throw createError(404);
+    throw createError(404, `User not found ${userId}`);
   }
 
-  return user.badges as string[];
+  return user.badges;
 };

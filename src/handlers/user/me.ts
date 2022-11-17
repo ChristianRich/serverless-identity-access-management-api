@@ -3,8 +3,8 @@ import type { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import type { HttpError } from 'http-errors';
 import { middyfy } from '@/middleware';
 
-// This end-point is protected by a request authorizer and
-// requires a valid AWS Id Bearer token in the authorization header (issued at login)
+// This handler is protected by a Cognito request authorizer and
+// require a valid AWS Id Bearer token in the authorization header (issued at login)
 const baseHandler = async (
   event: APIGatewayProxyEvent,
 ): Promise<APIGatewayProxyResult> => {

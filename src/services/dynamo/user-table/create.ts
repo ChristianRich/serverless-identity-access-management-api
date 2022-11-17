@@ -1,4 +1,8 @@
-import { DynamoDBClient, PutItemCommand } from '@aws-sdk/client-dynamodb';
+import {
+  DynamoDBClient,
+  PutItemCommand,
+  PutItemCommandInput,
+} from '@aws-sdk/client-dynamodb';
 import { marshall } from '@aws-sdk/util-dynamodb';
 import createError from 'http-errors';
 import { getConfig } from '@/utils/env';
@@ -11,21 +15,23 @@ const client: DynamoDBClient = new DynamoDBClient({
 });
 
 export const createUser = async (user: User): Promise<void> => {
-  const command = new PutItemCommand({
+  const input: PutItemCommandInput = {
     TableName: getConfig(Config.USERS_TABLE_NAME),
     Item: marshall(user),
     ConditionExpression: 'attribute_not_exists(id)',
-  });
+  };
 
   try {
+    const command: PutItemCommand = new PutItemCommand(input);
     await client.send(command);
   } catch (error) {
     const { name, message } = <Error>error;
+    logger.error(`createUser ${name}: ${message}`, { data: { input } });
 
     if (name === 'ConditionalCheckFailedException') {
       throw createError(400, `User id ${user.id} already exists`);
     }
-    logger.error(`createUser ${name}: ${message}`);
+
     throw createError(500, 'User registration error');
   }
 };

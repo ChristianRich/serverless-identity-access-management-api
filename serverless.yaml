@@ -4,29 +4,10 @@ plugins:
   - serverless-esbuild
   - serverless-offline
   - serverless-prune-plugin
+  - serverless-s3-sync
+  - serverless-add-api-key
 package:
   individually: true
-custom:
-  usersTableName: ${sls:stage}.${self:service}.users
-  cognitoClientName: my-cognito-client # defined on creation in AWS Console > Cognito > Userpools
-  serverless-offline:
-    allowCache: true # Preserve memory
-    useChildProcesses: true
-    httpPort: 3000
-    stageVariables:
-      foo: "bar"
-  prune:
-    automatic: true
-    number: 3
-  esbuild:
-    bundle: true
-    minify: false
-    sourcemap: true
-    exclude:
-      - aws-sdk
-    target: node16
-    platform: node
-    concurrency: 10
 provider:
   name: aws
   region: ap-southeast-2
@@ -34,15 +15,17 @@ provider:
   apiGateway:
     minimumCompressionSize: 1024
     shouldStartNameWithService: true
+    metrics: true
+  tracing:
+    apiGateway: true
   environment:
-    # JWT_EXPIRY: ${ssm:/aws/reference/secretsmanager/dev/user-api/jwt-expiry}
-    JWT_EXPIRY: "2d"
     AWS_NODEJS_CONNECTION_REUSE_ENABLED: "1"
     NODE_OPTIONS: "--enable-source-maps --stack-trace-limit=1000"
     STAGE: ${sls:stage}
     COGNITO_POOL_ID: { Ref: CognitoUserPool }
     COGNITO_CLIENT_ID: { Ref: CognitoUserClient }
     USERS_TABLE_NAME: ${self:custom.usersTableName}
+    STATIC_ASSETS_URL: https://s3.${self:provider.region}.amazonaws.com/${self:custom.staticAssetsBucketName}
   iam:
     role:
       statements:
@@ -78,12 +61,39 @@ provider:
             - !Sub "${UserTable.Arn}/index/*"
             # - !Sub "${UserTable.Arn}"
             # - !Sub "${UserTable.Arn}/index/EmailIndex"
+custom:
+  usersTableName: ${sls:stage}.${self:service}.users
+  staticAssetsBucketName: ${sls:stage}.${self:service}.static-assets
+  cognitoClientName: my-cognito-client # defined on creation in AWS Console > Cognito > Userpools
+  serverless-offline:
+    allowCache: true # Preserve memory
+    useChildProcesses: true
+    httpPort: 3000
+  prune:
+    automatic: true
+    number: 3
+  esbuild:
+    bundle: true
+    minify: false
+    sourcemap: true
+    exclude:
+      - aws-sdk
+    target: node16
+    platform: node
+    concurrency: 10
+  s3Sync:
+    - bucketName: ${self:custom.staticAssetsBucketName}
+      localDir: /assets
+  apiKeys:
+    - name: apikey
+      value: ${ssm:/aws/reference/secretsmanager/dev/user-api/api-key} # This path MUST be valid or deployment will fail
+      deleteAtRemoval: false # Retain secret when stack is removed
 functions:
   getUser:
     handler: src/handlers/user/me.handler
     events:
       - http:
-          path: user/me
+          path: public/user/me
           method: get
           cors: true
           authorizer:
@@ -94,7 +104,7 @@ functions:
                 - CognitoUserPool
                 - Arn
             claims:
-              - email # passed to event handler
+              - email
   getUserById:
     handler: src/handlers/user/by-id.handler
     events:
@@ -102,6 +112,7 @@ functions:
           path: user/{id}
           method: get
           cors: true
+          private: true
   getUserByName:
     handler: src/handlers/user/by-name.handler
     events:
@@ -109,6 +120,7 @@ functions:
           path: user/name/{name}
           method: get
           cors: true
+          private: true
   getUserByEmail:
     handler: src/handlers/user/by-email.handler
     events:
@@ -116,6 +128,7 @@ functions:
           path: user/email/{email}
           method: get
           cors: true
+          private: true
   getUserByHandle:
     handler: src/handlers/user/by-handle.handler
     events:
@@ -123,6 +136,7 @@ functions:
           path: user/handle/{handle}
           method: get
           cors: true
+          private: true
   register:
     handler: src/handlers/user/register.handler
     events:
@@ -130,6 +144,7 @@ functions:
           path: user
           method: post
           cors: true
+          private: true
   confirmAccount:
     handler: src/handlers/user/activate.handler
     events:
@@ -137,6 +152,7 @@ functions:
           path: user/activate/{activationCode}
           method: get
           cors: true
+          private: true
   updateUserStatus:
     handler: src/handlers/user/update-status.handler
     events:
@@ -144,6 +160,7 @@ functions:
           path: user/{id}/status/{status}
           method: patch
           cors: true
+          private: true
   putUserData:
     handler: src/handlers/user/user-data.handler
     events:
@@ -151,6 +168,7 @@ functions:
           path: user/{id}/data/update
           method: put
           cors: true
+          private: true
   patchUserData:
     handler: src/handlers/user/user-data.handler
     events:
@@ -158,6 +176,7 @@ functions:
           path: user/{id}/data/update
           method: patch
           cors: true
+          private: true
   login:
     handler: src/handlers/auth/login.handler
     events:
@@ -165,6 +184,7 @@ functions:
           path: auth/login
           method: post
           cors: true
+          private: true
   verifyToken:
     handler: src/handlers/auth/verify-token.handler
     events:
@@ -172,6 +192,7 @@ functions:
           path: auth/token/{tokenType}/verify/{token}
           method: get
           cors: true
+          private: true
   issueBadge:
     handler: src/handlers/user/badges.handler
     events:
@@ -179,6 +200,7 @@ functions:
           path: user/{id}/badge/{name}
           method: post
           cors: true
+          private: true
   revokeBadge:
     handler: src/handlers/user/badges.handler
     events:
@@ -186,8 +208,27 @@ functions:
           path: user/{id}/badge/{name}
           method: delete
           cors: true
+          private: true
 resources:
   Resources:
+    StaticAssetsBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: ${self:custom.staticAssetsBucketName}
+        AccessControl: PublicRead
+    PublicBucketPolicy:
+      Type: AWS::S3::BucketPolicy
+      Properties:
+        Bucket: !Ref StaticAssetsBucket
+        PolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Action:
+                - "s3:GetObject"
+              Resource:
+                - !Sub "${StaticAssetsBucket.Arn}/*"
+              Principal: "*"
     CognitoUserPool:
       Type: AWS::Cognito::UserPool
       Properties:
@@ -237,8 +278,8 @@ resources:
         ClientName: ${self:custom.cognitoClientName}
         GenerateSecret: false
         UserPoolId: { Ref: CognitoUserPool }
-        AccessTokenValidity: 6 # exp in hours
-        IdTokenValidity: 6 # exp in hours
+        AccessTokenValidity: 6 # exp in hrs
+        IdTokenValidity: 6 # exp in hrs
         ExplicitAuthFlows:
           - ALLOW_REFRESH_TOKEN_AUTH
           - ALLOW_ADMIN_USER_PASSWORD_AUTH

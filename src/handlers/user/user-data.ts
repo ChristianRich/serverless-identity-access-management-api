@@ -37,7 +37,7 @@ const baseHandler = async (
   }
 
   // Receiving unstructured data
-  const data: Record<string, unknown> = body as unknown as Record<
+  const data: Record<string, unknown> = (body as unknown) as Record<
     string,
     unknown
   >;

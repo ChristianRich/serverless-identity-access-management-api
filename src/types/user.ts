@@ -1,3 +1,5 @@
+import { JSONValue } from '.';
+
 export type User = {
   readonly id: string;
   readonly createdAt: string;
@@ -11,11 +13,9 @@ export type User = {
   readonly role: UserRole;
   readonly status: UserStatus;
   readonly bio?: UserBio;
-  readonly data?: Record<string, unknown>; // CRUD supported unstructured JSON data, associated with this user
+  readonly data?: JSONValue; // Unstructured data associated with this user (CRUD accessible)
   readonly badges: UserBadgeName[];
 };
-
-export type UserPermissions = 'product' | 'sdf';
 
 export type UserCreateInput = {
   name: string;
@@ -35,6 +35,7 @@ export type UserBio = {
   badges?: UserBadge[];
 };
 
+// Badges are digital credentials representing specific learning skills and achievements
 export type UserBadge = {
   name: UserBadgeName;
   iconUrl: string;
@@ -42,6 +43,7 @@ export type UserBadge = {
 };
 
 export type UserRole = 'USER' | 'MODERATOR' | 'ADMIN';
+
 export type UserStatus =
   | 'UNCONFIRMED'
   | 'CONFIRMED'
@@ -60,4 +62,5 @@ export type UserBadgeName =
   | 'FEATURED_AUTHOR'
   | 'TOP_SELLER'
   | 'RISING_STAR'
-  | 'FOUNDING_MEMBER';
+  | 'FOUNDING_MEMBER'
+  | 'TOP_REVIEWER';

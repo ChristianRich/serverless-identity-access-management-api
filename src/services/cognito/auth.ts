@@ -31,15 +31,14 @@ export const auth = async (
   const command: AdminInitiateAuthCommand = new AdminInitiateAuthCommand(input);
 
   try {
-    logger.debug('Cognito.AdminInitiateAuthCommand', { data: input });
+    logger.debug('Cognito.AdminInitiateAuthCommand', { data: { input } });
     const output: AdminInitiateAuthCommandOutput = await client.send(command);
-    return <AuthenticationResultType>output.AuthenticationResult;
+    const { AuthenticationResult } = output;
+    return AuthenticationResult;
   } catch (error) {
-    const { message, name } = <Error>error;
+    const { message, name } = error;
     logger.error(`Cognito.AdminInitiateAuthCommand: ${name}: ${message}`, {
-      error,
-      email,
-      password: '[redacted]',
+      input,
     });
     throw error;
   }
