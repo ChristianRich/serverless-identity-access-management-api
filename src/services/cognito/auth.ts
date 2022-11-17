@@ -13,7 +13,9 @@ const client: CognitoIdentityProviderClient = new CognitoIdentityProviderClient(
   {},
 );
 
-// Authenticate user and issue tokens
+/**
+ * Authenticate user via credentials and issue tokens
+ */
 export const auth = async (
   email: string,
   password: string,
@@ -31,14 +33,14 @@ export const auth = async (
   const command: AdminInitiateAuthCommand = new AdminInitiateAuthCommand(input);
 
   try {
-    logger.debug('Cognito.AdminInitiateAuthCommand', { data: { input } });
+    logger.debug('Cognito.AdminInitiateAuthCommand', { data: { email } });
     const output: AdminInitiateAuthCommandOutput = await client.send(command);
     const { AuthenticationResult } = output;
     return AuthenticationResult;
   } catch (error) {
     const { message, name } = error;
     logger.error(`Cognito.AdminInitiateAuthCommand: ${name}: ${message}`, {
-      input,
+      data: { email },
     });
     throw error;
   }
