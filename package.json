@@ -1,5 +1,5 @@
 {
-  "name": "sls-identity-api",
+  "name": "id-api",
   "version": "1.0.0",
   "description": "Serverless Identity & Access Management API",
   "scripts": {

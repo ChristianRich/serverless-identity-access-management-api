@@ -65,7 +65,8 @@ provider:
 custom:
   usersTableName: ${sls:stage}.${self:service}.users
   staticAssetsBucketName: ${sls:stage}.${self:service}.static-assets
-  cognitoClientName: my-cognito-client # defined on creation in AWS Console > Cognito > Userpools
+  cognitoClientName: ${sls:stage}.${self:service}.client
+  cognitoUserPoolName: ${sls:stage}.${self:service}.users
   serverless-offline:
     allowCache: true # Preserve memory
     useChildProcesses: true
@@ -238,10 +239,21 @@ resources:
               Resource:
                 - !Sub "${StaticAssetsBucket.Arn}/*"
               Principal: "*"
+    CognitoUserClient:
+      Type: AWS::Cognito::UserPoolClient
+      Properties:
+        ClientName: ${self:custom.cognitoClientName}
+        GenerateSecret: false
+        UserPoolId: { Ref: CognitoUserPool }
+        AccessTokenValidity: 6 # exp in hrs
+        IdTokenValidity: 6 # exp in hrs
+        ExplicitAuthFlows:
+          - ALLOW_REFRESH_TOKEN_AUTH
+          - ALLOW_ADMIN_USER_PASSWORD_AUTH
     CognitoUserPool:
       Type: AWS::Cognito::UserPool
       Properties:
-        UserPoolName: serverless-auth-pool
+        UserPoolName: ${self:custom.cognitoUserPoolName}
         EmailVerificationSubject: "Your verification Code"
         EmailVerificationMessage: "Use this code to confirm your sign up {####}"
         MfaConfiguration: OFF
@@ -281,17 +293,6 @@ resources:
         Description: "Admins"
         GroupName: "ADMIN"
         UserPoolId: { Ref: CognitoUserPool }
-    CognitoUserClient:
-      Type: AWS::Cognito::UserPoolClient
-      Properties:
-        ClientName: ${self:custom.cognitoClientName}
-        GenerateSecret: false
-        UserPoolId: { Ref: CognitoUserPool }
-        AccessTokenValidity: 6 # exp in hrs
-        IdTokenValidity: 6 # exp in hrs
-        ExplicitAuthFlows:
-          - ALLOW_REFRESH_TOKEN_AUTH
-          - ALLOW_ADMIN_USER_PASSWORD_AUTH
     UserTable:
       Type: AWS::DynamoDB::Table
       Properties:
