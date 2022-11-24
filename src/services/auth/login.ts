@@ -7,6 +7,10 @@ import {
   CognitoIdOrAccessTokenPayload,
   CognitoIdTokenPayload,
 } from 'aws-jwt-verify/jwt-model';
+import { User } from '@/types/user';
+import createError from 'http-errors';
+import { UserStatus } from 'aws-lambda';
+import { getUserById } from '../dynamo/user-table/get';
 
 export const login = async (
   email: string,
@@ -25,6 +29,20 @@ export const login = async (
     CognitoAccessTokenPayload
   > = await verifyToken(AccessToken);
 
+  const user: User | null = await getUserById(claims.sub);
+
+  if (!user) {
+    throw createError(404);
+  }
+
+  if (!canLogin(user)) {
+    throw createError(403);
+  }
+
   await updateLastLoginTimeStamp(claims.sub);
   return authenticationResult;
 };
+
+export const canLogin = (user: User): boolean =>
+  user.status === <UserStatus>'UNCONFIRMED' ||
+  user.status === <UserStatus>'CONFIRMED';
