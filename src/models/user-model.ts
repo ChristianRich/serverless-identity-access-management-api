@@ -23,6 +23,7 @@ export class UserModel {
   readonly email: string;
   readonly role: UserRole;
   readonly status: UserStatus;
+  readonly sourceSystem?: string;
   readonly profile: {
     profileData: UserProfileData;
     badges: UserBadge[];
@@ -40,6 +41,7 @@ export class UserModel {
     this.email = user.email;
     this.role = user.role;
     this.status = user.status;
+    this.sourceSystem = user.sourceSystem;
 
     // Prepend absolute S3 URL to relative paths
     this.profile = {
