@@ -76,7 +76,8 @@ yarn seed:user
 | `POST`   | `/auth/login`                            | Exchange credentials for an access token                                                                                                                | S2S        | API key      |
 | `GET`    | `/auth/token/{tokenType}/verify/{token}` | Verify token. Types = `access` or `id` (derived from Cognito)                                                                                           | S2S        | API key      |
 | `POST`   | `/user`                                  | Register new user                                                                                                                                       | S2S        | API key      |
-| `GET`    | `/user/id`                               | Get user by ID                                                                                                                                          | S2S        | API key      |
+| `GET`    | `/user/id`                               | Get user by ID                                                                                                                                          |
+| `DELETE` | `/user/id`                               | Delete user by ID (hard delete)                                                                                                                         | S2S        | API key      |
 | `GET`    | `/user/name/{name}`                      | Get user by name (GSI)                                                                                                                                  | S2S        | API key      |
 | `GET`    | `/user/email/{email}`                    | Get user by email (GSI)                                                                                                                                 | S2S        | API key      |
 | `GET`    | `/user/handle/{handle}`                  | Get user by handle e.g `@SomePerson` (GSI)                                                                                                              | S2S        | API key      |
@@ -90,6 +91,41 @@ yarn seed:user
 ## DynamoDB StreamEvents
 
 When new users are added to the Users table a stream event is dispatched which you can use to trigger an email sender Lambda function. Out of scope for this project - we're not building monoliths but decoupled micro-services :-)
+
+## User model
+
+```json
+{
+  "id": "56e905d1-f721-4592-ad98-24fa0390c3ee",
+  "name": "clovis.wiegand",
+  "handle": "@ClovisWiegand",
+  "createdAt": "2022-11-24T13:41:37.634Z",
+  "lastLoginAt": "2022-11-24T13:42:36.188Z",
+  "email": "kassandra44@yahoo.com",
+  "role": "USER",
+  "status": "UNCONFIRMED",
+  "profile": {
+    "profileData": {
+      "lang": "en_us",
+      "avatarUrl": "https://s3.ap-southeast-2.amazonaws.com/dev.xxxxx/avatars/x256/01.png",
+      "currency": "USD"
+    },
+    "badges": [
+      {
+        "name": "NEW_MEMBER",
+        "iconUrl": "https://s3.ap-southeast-2.amazonaws.com/dev.xxxxx/badges/new-member.svg"
+      }
+    ],
+    "data": {
+      "unstructured": "data",
+      "title": "Profit-focused solution-oriented matrix"
+    }
+  },
+  "$devTest": {
+    "activationCode": "HfqbvY3046gpc7R0eGSMQ"
+  }
+}
+```
 
 ## Solutions architecture
 
