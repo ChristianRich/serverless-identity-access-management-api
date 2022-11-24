@@ -21,7 +21,7 @@ provider:
   environment:
     AWS_NODEJS_CONNECTION_REUSE_ENABLED: "1"
     NODE_OPTIONS: "--enable-source-maps --stack-trace-limit=1000"
-    STAGE: ${sls:stage}
+    NODE_ENV: ${sls:stage}
     COGNITO_POOL_ID: { Ref: CognitoUserPool }
     COGNITO_CLIENT_ID: { Ref: CognitoUserClient }
     USERS_TABLE_NAME: ${self:custom.usersTableName}

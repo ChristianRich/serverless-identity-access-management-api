@@ -1,6 +1,5 @@
 import { omitBy } from 'lodash';
 import createError from 'http-errors';
-import logger from '@/services/logger';
 import { Config } from '@/constants';
 
 // Centralised and safe point of accessing `process.env` variables
@@ -17,7 +16,8 @@ export const getConfig = (
     if (isRequired) {
       throw createError(500, message);
     }
-    logger.warn(
+    // eslint-disable-next-line no-console
+    console.warn(
       `Configuration warning: Optional key '${key}' accessed, but not present in runtime config. Fallback value: ${fallbackValue}`,
     );
     return fallbackValue || undefined;

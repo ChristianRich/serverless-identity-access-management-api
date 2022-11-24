@@ -1,4 +1,4 @@
-import logger from 'src/services/logger';
+import logger from '@/services/logger';
 import {
   CognitoIdentityProviderClient,
   AdminInitiateAuthCommand,

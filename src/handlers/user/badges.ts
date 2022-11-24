@@ -1,7 +1,7 @@
 import type { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import type { HttpError } from 'http-errors';
 import createError from 'http-errors';
-import logger from 'src/services/logger';
+import logger from '@/services/logger';
 import { middyfy } from '@/middleware';
 import { addBadge, removeBadge } from '@/services/dynamo/user-table/badge';
 import { UserBadgeName } from '@/types/user';

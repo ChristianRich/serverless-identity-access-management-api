@@ -1,4 +1,4 @@
-import logger from 'src/services/logger';
+import logger from '@/services/logger';
 import type { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import type { HttpError } from 'http-errors';
 import { middyfyWithRequestBody } from '@/middleware';

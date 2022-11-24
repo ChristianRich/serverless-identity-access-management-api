@@ -162,7 +162,9 @@ export const deleteActivationCode = async (
   }
 };
 
-// TODO Soft delete by setting status to ARCHIVED
+export const softDelete = (id: string): Promise<void> =>
+  updateUserStatus(id, 'ARCHIVED');
+
 export const deleteUser = async (
   id: string,
   throwOnError = false,

@@ -1,7 +1,7 @@
 import type { User, UserStatus } from '@/types/user';
 import createHttpError from 'http-errors';
 import { getUserByActivationCode } from './get';
-import { updateUserStatus } from './user';
+import { deleteActivationCode, updateUserStatus } from './user';
 
 // Activate user from email activation link setting the status to CONFIRMED
 export const activate = async (activationCode: string): Promise<void> => {
@@ -22,4 +22,5 @@ export const activate = async (activationCode: string): Promise<void> => {
   }
 
   await updateUserStatus(id, 'CONFIRMED');
+  await deleteActivationCode(id);
 };

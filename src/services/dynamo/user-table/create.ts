@@ -9,6 +9,7 @@ import { getConfig } from '@/utils/env';
 import logger from '@/services/logger';
 import { User } from '@/types/user';
 import { Config } from '@/constants';
+import { omitBy, isUndefined } from 'lodash';
 
 const client: DynamoDBClient = new DynamoDBClient({
   region: getConfig('AWS_REGION'),
@@ -17,7 +18,7 @@ const client: DynamoDBClient = new DynamoDBClient({
 export const createUser = async (user: User): Promise<void> => {
   const input: PutItemCommandInput = {
     TableName: getConfig(Config.USERS_TABLE_NAME),
-    Item: marshall(user),
+    Item: marshall(omitBy(user, isUndefined)),
     ConditionExpression: 'attribute_not_exists(id)',
   };
 

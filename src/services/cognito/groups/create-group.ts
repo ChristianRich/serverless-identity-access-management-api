@@ -5,7 +5,7 @@ import {
   CreateGroupCommandOutput,
 } from '@aws-sdk/client-cognito-identity-provider';
 import { getConfig } from 'src/utils/env';
-import logger from 'src/services/logger';
+import logger from '@/services/logger';
 import { Config } from '@/constants';
 import { groupExists } from './get-group';
 

@@ -19,21 +19,18 @@ const baseHandler = async (
   }
 
   try {
-    const verificationResult = await verifyToken(token, tokenType);
+    await verifyToken(token, tokenType);
     return {
       statusCode: 200,
-      body: JSON.stringify(verificationResult),
+      body: '',
     };
   } catch (error) {
-    const { name, message, statusCode = 500 } = <Error | HttpError>error;
+    const { name, message } = <Error | HttpError>error;
     logger.error(`Token validation error: ${name} ${message}`, {
       data: { token, tokenType },
     });
 
-    return {
-      statusCode,
-      body: JSON.stringify(error),
-    };
+    throw error;
   }
 };
 

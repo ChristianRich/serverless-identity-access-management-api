@@ -6,7 +6,8 @@ import type {
 } from '@/types/api-gateway';
 import type { HttpError } from 'http-errors';
 import { middyfyWithRequestBody } from '@/middleware';
-import type { User, UserCreateInput } from '../../types/user';
+import { UserModel } from '@/models/user-model';
+import type { UserCreateInput } from '../../types/user';
 
 const requestBodyValidationSchema = {
   type: 'object',
@@ -20,9 +21,7 @@ const requestBodyValidationSchema = {
     email: { type: 'string', format: 'email', minLength: 6, maxLength: 128 },
     password: { type: 'string', minLength: 6, maxLength: 64 },
     repeatPassword: { type: 'string', minLength: 6, maxLength: 64 },
-    'bio.avatarUrl': { type: 'string', format: 'uri' },
-    'bio.about': { type: 'string', maxLength: 200 },
-    'bio.location': { type: 'string', maxLength: 20 },
+    sourceSystem: { type: 'string', maxLength: 64 },
   },
   required: ['name', 'email', 'password', 'repeatPassword'],
   additionalProperties: false,
@@ -35,20 +34,17 @@ const baseHandler: ValidatedEventAPIGatewayProxyEvent<
 ) => {
   const { body, requestContext } = event;
 
-  // Map unsafe user input to type-safe transfer model
   const userCreateInput: UserCreateInput = {
     name: body.name,
     email: body.email,
     password: body.password,
     repeatPassword: body.repeatPassword,
     sourceIp: requestContext.identity.sourceIp,
-    'bio.avatarUrl': body['bio.avatarUrl'],
-    'bio.about': body['bio.about'],
-    'bio.location': body['bio.location'],
+    sourceSystem: body.sourceSystem,
   };
 
   try {
-    const user: User = await registerUser(userCreateInput);
+    const user: UserModel = await registerUser(userCreateInput);
     return {
       statusCode: 200,
       body: JSON.stringify(user),

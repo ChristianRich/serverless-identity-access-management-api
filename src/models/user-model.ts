@@ -1,6 +1,8 @@
-import { JSONValue } from '@/types';
+import { BADGES, Config } from '@/constants';
+import { getConfig } from '@/utils/env';
 import { UserStatus } from 'aws-lambda';
-import { User, UserBadge, UserBio, UserRole } from '../types/user';
+import type { JsonObject } from 'type-fest';
+import { User, UserBadge, UserBadgeName, UserRole } from '../types/user';
 
 export class UserModel {
   readonly id: string;
@@ -13,11 +15,15 @@ export class UserModel {
   readonly role: UserRole;
   readonly status: UserStatus;
   readonly badges: UserBadge[];
-  readonly bio?: UserBio;
-  readonly data?: JSONValue;
-  readonly $devTest?: JSONValue; // Handy for automated dev testing
+  readonly bio: JsonObject;
+  readonly data?: JsonObject;
+
+  // Useful for automated testing
+  readonly $devTest?: JsonObject;
 
   constructor(user: User) {
+    const staticAssetsUrl = getConfig(Config.STATIC_ASSETS_URL);
+
     this.id = user.id;
     this.name = user.name;
     this.handle = user.handle;
@@ -26,14 +32,25 @@ export class UserModel {
     this.email = user.email;
     this.role = user.role;
     this.status = <UserStatus>user.status;
-    this.bio = user.bio;
-    // this.badges = user.badges;
-    this.badges = []; // TODO upload icons to S3 and reference
     this.data = user.data;
+    this.bio = {
+      ...user.bio,
+      avatarUrl: `${staticAssetsUrl}${user.bio.avatarUrl}`,
+      badges: user.badges.map(
+        (name: UserBadgeName): UserBadge => ({
+          name,
+          iconUrl: `${staticAssetsUrl}${BADGES[name]}`,
+        }),
+      ),
+    };
 
-    if (process.env.NODE_ENV !== 'prd') {
+    if (
+      process.env.NODE_ENV === 'dev' &&
+      user.status === 'UNCONFIRMED' &&
+      user.activationCode
+    ) {
       this.$devTest = {
-        activationCode: user?.activationCode,
+        activationCode: user.activationCode,
       };
     }
   }

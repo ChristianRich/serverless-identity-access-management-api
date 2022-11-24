@@ -1,5 +1,6 @@
 import type { User } from '@/types/user';
 import createHttpError from 'http-errors';
+import type { JsonObject } from 'type-fest';
 import { getUserById } from './get';
 import { updateUserData } from './user';
 
@@ -24,10 +25,6 @@ export const updateData = async (
     throw createHttpError(404);
   }
 
-  // TODO Use JSON type from npm type-fest
-  const mergeUpdate: Record<string, unknown> = Object.assign(
-    user?.data || {},
-    update,
-  );
+  const mergeUpdate: JsonObject = Object.assign(user?.data || {}, update);
   await updateUserData(id, mergeUpdate);
 };

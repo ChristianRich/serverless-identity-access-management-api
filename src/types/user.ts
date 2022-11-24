@@ -1,4 +1,4 @@
-import { JSONValue } from '.';
+import type { JsonObject } from 'type-fest';
 
 export type User = {
   readonly id: string;
@@ -9,12 +9,19 @@ export type User = {
   readonly email: string;
   readonly name: string;
   readonly handle: string;
-  readonly sourceIp: string;
+  readonly sourceIp: string; // IP at time of registration
+  readonly sourceSystem?: string; // Reference to external source system (user DB could be shared among several apps)
   readonly role: UserRole;
   readonly status: UserStatus;
   readonly bio?: UserBio;
-  readonly data?: JSONValue; // Unstructured data associated with this user (CRUD accessible)
-  readonly badges: UserBadgeName[];
+  readonly data?: JsonObject; // Unstructured data associated with this user (CRUD accessible)
+  readonly badges: UserBadgeName[]; // Badges are digital credentials representing specific learning skills and achievements
+};
+
+export type UserBio = {
+  avatarUrl: string;
+  about?: string;
+  location?: string;
 };
 
 export type UserCreateInput = {
@@ -23,19 +30,9 @@ export type UserCreateInput = {
   password: string;
   repeatPassword: string;
   sourceIp: string;
-  'bio.avatarUrl'?: string;
-  'bio.about'?: string;
-  'bio.location'?: string;
+  sourceSystem?: string;
 };
 
-export type UserBio = {
-  avatarUrl?: string;
-  about?: string;
-  location?: string;
-  badges?: UserBadge[];
-};
-
-// Badges are digital credentials representing specific learning skills and achievements
 export type UserBadge = {
   name: UserBadgeName;
   iconUrl: string;

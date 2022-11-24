@@ -5,7 +5,7 @@ import {
   CognitoIdentityProviderClient,
   UserType,
 } from '@aws-sdk/client-cognito-identity-provider';
-import logger from 'src/services/logger';
+import logger from '@/services/logger';
 import { getConfig } from 'src/utils/env';
 import createError from 'http-errors';
 import { Config } from '@/constants';
