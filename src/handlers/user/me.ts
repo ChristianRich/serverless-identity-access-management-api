@@ -5,6 +5,7 @@ import { middyfy } from '@/middleware';
 import { getUserById } from '@/services/dynamo/user-table/get';
 import { UserModel } from '@/models/user-model';
 import { User } from '@/types/user';
+import createError from 'http-errors';
 
 // This handler is protected by a Cognito request authorizer and
 // require a valid AWS Id Bearer token in the authorization header (issued at login)
@@ -24,6 +25,10 @@ const baseHandler = async (
   });
 
   const user: User | null = await getUserById(claims.sub);
+
+  if (!user) {
+    throw createError(404);
+  }
 
   try {
     return {
