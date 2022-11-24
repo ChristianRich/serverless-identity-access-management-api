@@ -29,7 +29,7 @@ export const createGroup = async (
 
   const input: CreateGroupCommandInput = {
     GroupName: name,
-    UserPoolId: getConfig(Config.COGNITO_POOL_ID),
+    UserPoolId: getConfig(Config.COGNITO_USER_POOL_ID),
   };
 
   const command: CreateGroupCommand = new CreateGroupCommand(input);

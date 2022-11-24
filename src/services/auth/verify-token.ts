@@ -25,7 +25,7 @@ export const verifyToken = async (
 > => {
   const verifier: CognitoJwtVerifierSingleUserPool<CognitoJwtVerifierProperties> = CognitoJwtVerifier.create(
     {
-      userPoolId: getConfig(Config.COGNITO_POOL_ID),
+      userPoolId: getConfig(Config.COGNITO_USER_POOL_ID),
       clientId: getConfig(Config.COGNITO_CLIENT_ID),
       tokenUse,
     },

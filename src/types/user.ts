@@ -1,27 +1,58 @@
 import type { JsonObject } from 'type-fest';
 
+// Represents the user as persisted in DynamoDB
 export type User = {
+  // PK = Cognito user id
   readonly id: string;
+
   readonly createdAt: string;
   readonly updatedAt?: string;
   readonly lastLoginAt?: string;
-  readonly activationCode: string;
+  readonly activationCode?: string;
+
+  // (GSI)
   readonly email: string;
+
+  // E.g christian_rich (GSI)
   readonly name: string;
+
+  // E.g @ChristianRich (GSI)
   readonly handle: string;
-  readonly sourceIp: string; // IP at time of registration
-  readonly sourceSystem?: string; // Reference to external source system (user DB could be shared among several apps)
+
+  // IP at time of registration (KYC / "know your customer")
+  readonly sourceIp: string;
+
+  // Optional reference to external source system
+  // This field is useful when the User API is shared across multiple websites / products
+  readonly sourceSystem?: string;
+
+  // USER, MODERATOR, ADMIN. Defaults to USER
   readonly role: UserRole;
+
+  // Defaults to UNCONFIRMED (= reduced priviledges e.g no write access)
   readonly status: UserStatus;
-  readonly bio?: UserBio;
-  readonly data?: JsonObject; // Unstructured data associated with this user (CRUD accessible)
-  readonly badges: UserBadgeName[]; // Badges are digital credentials representing specific learning skills and achievements
+
+  // Contains basic profile information
+  readonly profileData: UserProfileData;
+
+  // Unstructured / untyped data associated with this user
+  // This object is CRUD accessible via HTTP/PUT and HTTP/PATCH
+  readonly data?: JsonObject;
+
+  // Badges are digital credentials representing specific learning skills and achievements
+  readonly badges: UserBadgeName[];
 };
 
-export type UserBio = {
+// Add additional pieces of user profile data to this block
+export type UserProfileData = {
   avatarUrl: string;
   about?: string;
   location?: string;
+  lang?: string;
+  currency?: string;
+  // address
+  // phone
+  // ...
 };
 
 export type UserCreateInput = {

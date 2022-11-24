@@ -1,8 +1,8 @@
 import {
   CognitoIdentityProviderClient,
-  AdminGetUserCommand,
-  AdminGetUserCommandOutput,
-  AdminGetUserRequest,
+  AdminDeleteUserCommand,
+  AdminDeleteUserCommandInput,
+  AdminDeleteUserCommandOutput,
 } from '@aws-sdk/client-cognito-identity-provider';
 import logger from '@/services/logger';
 import { getConfig } from 'src/utils/env';
@@ -13,23 +13,22 @@ const client: CognitoIdentityProviderClient = new CognitoIdentityProviderClient(
   {},
 );
 
-// https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/clients/client-cognito-identity-provider/classes/admincreateusercommand.html
-export const getUserById = async (
+export const deleteUserById = async (
   id: string,
-): Promise<AdminGetUserCommandOutput> => {
-  const input: AdminGetUserRequest = {
+): Promise<AdminDeleteUserCommandOutput> => {
+  const input: AdminDeleteUserCommandInput = {
     UserPoolId: getConfig(Config.COGNITO_USER_POOL_ID),
     Username: id,
   };
 
-  const command: AdminGetUserCommand = new AdminGetUserCommand(input);
+  const command: AdminDeleteUserCommand = new AdminDeleteUserCommand(input);
 
   try {
-    logger.debug('Cognito.AdminGetUserCommand', { data: input });
+    logger.debug('Cognito.AdminDeleteUserCommand', { data: input });
     return client.send(command);
   } catch (error) {
     const { name } = <Error>error;
-    const message = `Cognito.AdminGetUserCommand: ${name}: ${error.message}`;
+    const message = `Cognito.AdminDeleteUserCommand: ${name}: ${error.message}`;
 
     if (name === 'UserNotFoundException') {
       logger.warn(message, { data: { input } });

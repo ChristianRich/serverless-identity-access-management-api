@@ -12,7 +12,6 @@ import { addUserToGroups } from '../cognito/groups/add-groups';
 import { createUser as createCognitoUser } from '../cognito/create-user';
 import { setPassword } from '../cognito/set-password';
 import { createUser as createDynamoDbUser } from '../dynamo/user-table/create';
-import { getUserByActivationCode, getUserById } from '../dynamo/user-table/get';
 
 // Create Cognito user and link ID to DynamoDB partition key (foreign key)
 export const registerUser = async (
@@ -35,7 +34,6 @@ export const registerUser = async (
 
   const id: string | undefined = getCognitoUserId(cognitoUser);
   const activationCode = getNanoId();
-  await checkCollisions(id, activationCode);
 
   const user: User = {
     id,
@@ -48,8 +46,10 @@ export const registerUser = async (
     role: 'USER',
     status: 'UNCONFIRMED',
     badges: ['NEW_MEMBER'],
-    bio: {
+    profileData: {
       avatarUrl: DEFAULT_USER_AVATAR_URL,
+      lang: 'en_us',
+      currency: 'USD',
     },
     data: {},
     sourceSystem: input.sourceSystem,
@@ -84,37 +84,4 @@ const getCognitoUserId = (user: UserType): string | undefined => {
     (attr: AttributeType) => attr.Name === 'sub',
   );
   return sub?.Value;
-};
-
-export const checkCollisions = async (
-  id: string,
-  activationCode: string,
-): Promise<void> => {
-  if (!id) {
-    throw createError(
-      500,
-      'User registration failed: Cognito did not return a sub/id',
-    );
-  }
-
-  const userByActivationCode: User | null = await getUserByActivationCode(
-    activationCode,
-  );
-
-  if (userByActivationCode) {
-    logger.error('User activationCode collision', {
-      data: { id, activationCode },
-    });
-    throw createError(
-      500,
-      'User registration failed: activationCode collision',
-    );
-  }
-
-  const userById: User | null = await getUserById(id);
-
-  if (userById) {
-    logger.error('User ID collision', { data: { id } });
-    throw createError(500, `User registration failed: User id collision`);
-  }
 };

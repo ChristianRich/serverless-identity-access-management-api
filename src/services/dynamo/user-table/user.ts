@@ -10,6 +10,7 @@ import { getConfig } from '@/utils/env';
 import logger from '@/services/logger';
 import { UserStatus } from '@/types/user';
 import { Config } from '@/constants';
+import type { JsonObject } from 'type-fest';
 
 const client: DynamoDBClient = new DynamoDBClient({
   region: getConfig('AWS_REGION'),
@@ -17,7 +18,7 @@ const client: DynamoDBClient = new DynamoDBClient({
 
 export const updateUserData = async (
   id: string,
-  data: Record<string, unknown>, // TODO use JSON type from npm type-fest
+  data: JsonObject,
 ): Promise<void> => {
   const input: UpdateItemCommandInput = {
     TableName: getConfig(Config.USERS_TABLE_NAME),
@@ -162,10 +163,10 @@ export const deleteActivationCode = async (
   }
 };
 
-export const softDelete = (id: string): Promise<void> =>
+export const softDeleteUser = (id: string): Promise<void> =>
   updateUserStatus(id, 'ARCHIVED');
 
-export const deleteUser = async (
+export const hardDeleteUser = async (
   id: string,
   throwOnError = false,
 ): Promise<void> => {
@@ -179,11 +180,13 @@ export const deleteUser = async (
     await client.send(command);
   } catch (error) {
     const { name, message } = <Error>error;
-    logger.error(`deleteUser ${name}: ${message}`);
 
     if (!throwOnError) {
+      logger.warn(`deleteUser ${name}: ${message}`);
       return;
     }
+
+    logger.error(`deleteUser ${name}: ${message}`);
 
     if (name === 'ConditionalCheckFailedException') {
       throw createError(404);

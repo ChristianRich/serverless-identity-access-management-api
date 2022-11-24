@@ -1,0 +1,30 @@
+{
+  "id": "56e905d1-f721-4592-ad98-24fa0390c3ee",
+  "name": "clovis.wiegand",
+  "handle": "@ClovisWiegand",
+  "createdAt": "2022-11-24T13:41:37.634Z",
+  "lastLoginAt": "2022-11-24T13:42:36.188Z",
+  "email": "kassandra44@yahoo.com",
+  "role": "USER",
+  "status": "UNCONFIRMED",
+  "profile": {
+    "profileData": {
+      "lang": "en_us",
+      "avatarUrl": "https://s3.ap-southeast-2.amazonaws.com/dev.sls-identity-api.static-assets/avatars/x256/01.png",
+      "currency": "USD"
+    },
+    "badges": [
+      {
+        "name": "NEW_MEMBER",
+        "iconUrl": "https://s3.ap-southeast-2.amazonaws.com/dev.sls-identity-api.static-assets/badges/new-member.svg"
+      }
+    ],
+    "data": {
+      "with_new_data": "South Aryannaborough",
+      "overwrite_other_keys": "Profit-focused solution-oriented matrix"
+    }
+  },
+  "$devTest": {
+    "activationCode": "HfqbvY3046gpc7R0eGSMQ"
+  }
+}

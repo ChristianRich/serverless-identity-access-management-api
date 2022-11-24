@@ -22,7 +22,7 @@ export const auth = async (
 ): Promise<AuthenticationResultType> => {
   const input: AdminInitiateAuthCommandInput = {
     AuthFlow: 'ADMIN_NO_SRP_AUTH',
-    UserPoolId: getConfig(Config.COGNITO_POOL_ID),
+    UserPoolId: getConfig(Config.COGNITO_USER_POOL_ID),
     ClientId: getConfig(Config.COGNITO_CLIENT_ID),
     AuthParameters: {
       USERNAME: email,

@@ -22,7 +22,7 @@ provider:
     AWS_NODEJS_CONNECTION_REUSE_ENABLED: "1"
     NODE_OPTIONS: "--enable-source-maps --stack-trace-limit=1000"
     NODE_ENV: ${sls:stage}
-    COGNITO_POOL_ID: { Ref: CognitoUserPool }
+    COGNITO_USER_POOL_ID: { Ref: CognitoUserPool }
     COGNITO_CLIENT_ID: { Ref: CognitoUserClient }
     USERS_TABLE_NAME: ${self:custom.usersTableName}
     STATIC_ASSETS_URL: https://s3.${self:provider.region}.amazonaws.com/${self:custom.staticAssetsBucketName}
@@ -36,6 +36,7 @@ provider:
             - cognito-idp:AdminCreateUser
             - cognito-idp:AdminSetUserPassword
             - cognito-idp:AdminAddUserToGroup
+            - cognito-idp:AdminDeleteUser
             - cognito-idp:CreateGroup
             - cognito-idp:GetGroup
             - cognito-idp:GetUser
@@ -206,6 +207,14 @@ functions:
     events:
       - http:
           path: user/{id}/badge/{name}
+          method: delete
+          cors: true
+          private: true
+  deleteUser:
+    handler: src/handlers/user/delete.handler
+    events:
+      - http:
+          path: user/{id}
           method: delete
           cors: true
           private: true

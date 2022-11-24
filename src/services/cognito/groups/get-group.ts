@@ -17,7 +17,7 @@ export const getGroup = async (
 ): Promise<GetGroupCommandOutput> => {
   const input: GetGroupCommandInput = {
     GroupName: name,
-    UserPoolId: getConfig(Config.COGNITO_POOL_ID),
+    UserPoolId: getConfig(Config.COGNITO_USER_POOL_ID),
   };
 
   const command: GetGroupCommand = new GetGroupCommand(input);

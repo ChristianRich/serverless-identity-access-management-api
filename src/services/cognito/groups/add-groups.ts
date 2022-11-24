@@ -20,7 +20,7 @@ export const addUserToGroup = async (
 ): Promise<AdminAddUserToGroupCommandOutput> => {
   const input: AdminAddUserToGroupCommandInput = {
     GroupName: group,
-    UserPoolId: getConfig(Config.COGNITO_POOL_ID),
+    UserPoolId: getConfig(Config.COGNITO_USER_POOL_ID),
     Username: email,
   };
 

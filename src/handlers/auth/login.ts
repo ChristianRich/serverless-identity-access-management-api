@@ -5,15 +5,8 @@ import {
   ValidatedAPIGatewayProxyEvent,
   ValidatedEventAPIGatewayProxyEvent,
 } from '@/types/api-gateway';
-import { auth } from '@/services/cognito/auth';
 import { middyfyWithRequestBody } from '@/middleware';
-import { updateLastLoginTimeStamp } from '@/services/dynamo/user-table/user';
-import {
-  CognitoAccessTokenPayload,
-  CognitoIdOrAccessTokenPayload,
-  CognitoIdTokenPayload,
-} from 'aws-jwt-verify/jwt-model';
-import { verifyToken } from '@/services/auth/verify-token';
+import { login } from '@/services/auth/login';
 
 const requestBodyValidationSchema = {
   type: 'object',
@@ -33,24 +26,11 @@ const baseHandler: ValidatedEventAPIGatewayProxyEvent<
   const { email, password } = event.body;
 
   try {
-    const authenticationResult: AuthenticationResultType = await auth(
-      email,
-      password,
-    );
-
-    const { AccessToken } = authenticationResult;
-
-    // Pulling out the claims to get the userId
-    const claims: CognitoIdOrAccessTokenPayload<
-      CognitoIdTokenPayload,
-      CognitoAccessTokenPayload
-    > = await verifyToken(AccessToken);
-
-    await updateLastLoginTimeStamp(claims.sub);
+    const tokens: AuthenticationResultType = await login(email, password);
 
     return {
       statusCode: 200,
-      body: JSON.stringify(authenticationResult),
+      body: JSON.stringify(tokens), // TODO Consider which tokens to return
     };
   } catch (error) {
     const { name, message, statusCode = 500 } = <Error | HttpError>error;
